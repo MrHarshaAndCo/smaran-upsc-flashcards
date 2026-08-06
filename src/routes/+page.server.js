@@ -28,6 +28,7 @@ export async function load({ cookies }) {
 		nemesis,
 		nemesisStats,
 		nemesisName: nemesis?.name ?? null,
+		nemesisUserId: nemesis?.userId ?? null,
 		userName: user?.name ?? 'Aspirant',
 		decks
 	};

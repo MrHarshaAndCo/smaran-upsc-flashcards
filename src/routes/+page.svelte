@@ -30,6 +30,7 @@
 		perRound={10}
 		nemesisStats={data.nemesisStats}
 		nemesisName={data.nemesisName}
+		nemesisUserId={data.nemesisUserId}
 		userName={data.userName}
 	/>
 

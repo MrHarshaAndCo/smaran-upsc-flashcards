@@ -35,6 +35,7 @@ export class QuizSession {
 		this.peerStats = peerStats;
 		this.nemesisStats = nemesisStats;
 		this.nemesisName = nemesisName;
+		if (nemesisUserId) this.nemesisUserId = nemesisUserId;
 		if (userName) this.userName = userName;
 	}
 
@@ -126,6 +127,15 @@ export class QuizSession {
 
 		this.summary = { correct, total, advice, rivalNote };
 
+			// Nemesis encounter data.
+			let nemesisPayload = undefined;
+			if (this.nemesisUserId) {
+				let nc = 0, nt = 0;
+				if (this.nemesisStats) for (const s of Object.values(this.nemesisStats)) { nc += s.correctCount; nt += s.totalCount; }
+				if (nt > 0 && total > 0) {
+					nemesisPayload = { nemesisUserId: this.nemesisUserId, myCorrect: correct, myTotal: total, theirCorrect: nc, theirTotal: nt, outcome: (correct / total) > (nc / nt) ? "win" : (correct / total) < (nc / nt) ? "loss" : "draw" };
+				}
+			}
 		this.posting = true;
 		try {
 			await fetch('/api/quiz', {
@@ -135,7 +145,8 @@ export class QuizSession {
 					quizId: this.quiz.id,
 					startedAt: this.startedAt,
 					endedAt: Date.now(),
-					results: this.results.map((r) => ({ questionId: r.questionId, correct: r.correct, ms: r.ms }))
+					results: this.results.map((r) => ({ questionId: r.questionId, correct: r.correct, ms: r.ms })),
+					nemesis: nemesisPayload,
 				})
 			});
 		} catch {

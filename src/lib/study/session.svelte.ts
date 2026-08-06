@@ -50,6 +50,7 @@ export class StudySession {
 		this.peerStats = peerStats;
 		this.nemesisStats = nemesisStats;
 		this.nemesisName = nemesisName;
+		if (nemesisUserId) this.nemesisUserId = nemesisUserId;
 		this.myMeta = myMeta;
 		if (userName) this.userName = userName;
 		this.states = new Map(Object.entries(cardStates).map(([k, v]) => [k, { ...v }]));
@@ -170,6 +171,15 @@ export class StudySession {
 
 		this.summary = { total, correct, lapses, missedCards, advice, nemesisNote };
 
+		// Nemesis encounter data.
+		let nemesisPayload = undefined;
+		if (this.nemesisUserId) {
+			let nc = 0, nt = 0;
+			if (this.nemesisStats) for (const s of Object.values(this.nemesisStats)) { nc += s.correctCount; nt += s.totalCount; }
+			if (nt > 0 && total > 0) {
+				nemesisPayload = { nemesisUserId: this.nemesisUserId, myCorrect: correct, myTotal: total, theirCorrect: nc, theirTotal: nt, outcome: (correct / total) > (nc / nt) ? "win" : (correct / total) < (nc / nt) ? "loss" : "draw" };
+			}
+		}
 		this.posting = true;
 		try {
 			await fetch('/api/sessions', {
@@ -179,7 +189,8 @@ export class StudySession {
 					deckId: this.deckId,
 					startedAt: this.startedAt,
 					endedAt,
-					results: this.results
+					results: this.results,
+					nemesis: nemesisPayload,
 				})
 			});
 		} catch {

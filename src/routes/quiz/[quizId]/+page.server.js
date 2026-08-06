@@ -23,6 +23,7 @@ export async function load({ params, cookies }) {
 		peerStats = peers;
 		nemesisStats = ns;
 		nemesisName = nemesis?.name ?? null;
+		nemesisUserId = nemesis?.userId ?? null
 	}
 
 	return {

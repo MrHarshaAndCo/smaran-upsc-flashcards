@@ -15,6 +15,7 @@
 		peerStats: data.peerStats,
 		nemesisStats: data.nemesisStats,
 		nemesisName: data.nemesisName,
+		nemesisUserId: data.nemesisUserId,
 		userName: data.user?.name
 	});
 

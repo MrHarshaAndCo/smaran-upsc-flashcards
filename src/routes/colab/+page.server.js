@@ -33,6 +33,18 @@ export async function load({ cookies, url }) {
 				store.getCardDuels(userId, targetId)
 			]);
 		}
+
+	// Nemesis data + devices.
+	let nemesis = null;
+	let nemesisRecord = null;
+	let nemesisHistory = [];
+	if (userId) {
+		nemesis = await store.findNemesis(userId);
+		if (nemesis) {
+			nemesisRecord = await store.getNemesisRecord(userId, nemesis.userId);
+			nemesisHistory = await store.getNemesisHistory(userId, nemesis.userId, 12);
+		}
+	}
 	}
 
 	const top = leaderboard[0] ?? null;
@@ -44,6 +56,10 @@ export async function load({ cookies, url }) {
 		top,
 		me,
 		perDeck,
+		nemesis,
+		nemesisRecord,
+		nemesisHistory,
+		devices: await store.listDevices(userId),
 		room,
 		target,
 		h2h,

@@ -30,6 +30,7 @@ export async function load({ params, cookies }) {
 		myMeta = meta;
 		nemesisStats = ns;
 		nemesisName = nemesis?.name ?? null;
+		nemesisUserId = nemesis?.userId ?? null,
 		nemesisAvatar = nemesis?.avatar ?? null;
 	}
 
