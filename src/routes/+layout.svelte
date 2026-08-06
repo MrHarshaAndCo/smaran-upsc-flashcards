@@ -2,7 +2,7 @@
 	import '../app.css';
 	import { page } from '$app/state';
 	import { invalidateAll } from '$app/navigation';
-	import { PenLine, BookOpen, Users, Trophy, LogOut } from 'lucide-svelte';
+	import { PenLine, BookOpen, Users, Trophy, LogOut, Settings } from 'lucide-svelte';
 	import { Toaster } from 'svelte-sonner';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '$lib/components/ui/card';
@@ -57,9 +57,10 @@
 				{/each}
 			</nav>
 			<div class="flex-1" />
-			<div class="flex items-center gap-2 text-sm">
+			<div class="flex items-center gap-1 text-sm">
 				<span class="font-medium">{data.user.name}</span>
-				<button onclick={logout} class="inline-flex items-center rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground" title="Log out"><LogOut class="size-4" /></button>
+				<a href="/settings" class="inline-flex items-center rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground" title="Settings" aria-label="Settings"><Settings class="size-4" /></a>
+				<button onclick={logout} class="inline-flex items-center rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground" title="Log out" aria-label="Log out"><LogOut class="size-4" /></button>
 			</div>
 		</div>
 	</header>

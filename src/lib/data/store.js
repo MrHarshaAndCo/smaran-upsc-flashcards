@@ -207,6 +207,25 @@ class MockStore {
 		return ok ? user : null;
 	}
 
+	async changePassword(userId, currentPassword, newPassword) {
+		const user = this.users.get(userId);
+		if (!user || !user.passwordHash || !user.passwordSalt) return false;
+		const ok = await verifyPassword(currentPassword, user.passwordSalt, user.passwordHash);
+		if (!ok) return false;
+		const { salt, hash } = await hashPassword(newPassword);
+		user.passwordSalt = salt;
+		user.passwordHash = hash;
+		return true;
+	}
+
+	async updateProfile(userId, { name }) {
+		const user = this.users.get(userId);
+		if (!user) return null;
+		if (name && name.trim()) user.name = name.trim().slice(0, 24);
+		const { passwordHash, passwordSalt, ...safe } = user;
+		return safe;
+	}
+
 	async listUsers() {
 		return [...this.users.values()];
 	}
@@ -616,7 +635,7 @@ class NeonStore {
 	}
 
 	async getUser(userId) {
-		const rows = await this.sql('SELECT id, name, avatar, created_at AS createdAt FROM users WHERE id = $1', [userId]);
+		const rows = await this.sql('SELECT id, name, avatar, email, created_at AS createdAt FROM users WHERE id = $1', [userId]);
 		return rows[0] ?? null;
 	}
 
@@ -656,6 +675,27 @@ class NeonStore {
 		return { id: user.id, name: user.name, avatar: user.avatar, createdAt: user.createdAt };
 	}
 
+
+	async changePassword(userId, currentPassword, newPassword) {
+		const rows = await this.sql(
+			'SELECT id, password_hash AS "passwordHash", password_salt AS "passwordSalt" FROM users WHERE id = $1',
+			[userId]
+		);
+		const user = rows[0];
+		if (!user || !user.passwordHash || !user.passwordSalt) return false;
+		const ok = await verifyPassword(currentPassword, user.passwordSalt, user.passwordHash);
+		if (!ok) return false;
+		const { salt, hash } = await hashPassword(newPassword);
+		await this.sql("UPDATE users SET password_hash = $2, password_salt = $3 WHERE id = $1", [userId, hash, salt]);
+		return true;
+	}
+
+	async updateProfile(userId, { name }) {
+		const clean = name?.trim().slice(0, 24);
+		if (!clean) return this.getUser(userId);
+		await this.sql("UPDATE users SET name = $2 WHERE id = $1", [userId, clean]);
+		return this.getUser(userId);
+	}
 	async listUsers() {
 		return this.sql('SELECT id, name, avatar, created_at AS createdAt FROM users');
 	}
@@ -1102,6 +1142,8 @@ export function _resetStore() {
  * @property {(name: string, credentials?: { email?: string, password?: string }) => Promise<User>} createUser
  * @property {(email: string) => Promise<User|null>} findUserByEmail
  * @property {(email: string, password: string) => Promise<User|null>} verifyCredentials
+ * @property {(userId: string, currentPassword: string, newPassword: string) => Promise<boolean>} changePassword
+ * @property {(userId: string, args: { name?: string }) => Promise<User|null>} updateProfile
  * @property {() => Promise<Array<{ subject: string, count: number, subTopics: Array<{ name: string, count: number }> }>>} getQuestionFilters
  * @property {(args?: { subject?: string|null, subTopic?: string|null, limit?: number }) => Promise<Array<{ id: string, subject: string, subTopic: string|null, question: string, options: string[], answerIndex: number, explanation: string|null }>>} getQuestions
  * @property {() => Promise<User[]>} listUsers
