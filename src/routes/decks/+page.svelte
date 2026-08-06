@@ -1,14 +1,13 @@
 <script>
 	import { goto } from '$app/navigation';
-	import Flashcard from '$lib/components/Flashcard.svelte';
 	import FeedbackPanel from '$lib/components/FeedbackPanel.svelte';
 	import { Button } from '$lib/components/ui/button';
-	import { Card } from '$lib/components/ui/card';
+	import { Progress } from '$lib/components/ui/progress';
+	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { StudySession } from '$lib/study/session.svelte.js';
 
 	let { data } = $props();
 
-	// svelte-ignore state_referenced_locally — server load data is static per page
 	const session = new StudySession({
 		deck: data.deck,
 		cards: data.cards,
@@ -25,10 +24,7 @@
 		function onKey(e) {
 			if (session.done) return;
 			if (e.key === ' ' || e.key === 'Enter') {
-				if (!session.flipped) {
-					e.preventDefault();
-					session.flipped = true;
-				}
+				if (!session.flipped) { e.preventDefault(); session.flipped = true; }
 			} else if (session.flipped && !session.rated) {
 				const map = { '1': 'again', '2': 'hard', '3': 'good', '4': 'easy' };
 				if (map[e.key]) session.rate(map[e.key]);
@@ -70,33 +66,35 @@
 	{:else}
 		<div class="flex items-center justify-between">
 			<p class="font-mono text-xs font-medium text-primary">{data.deck.emoji} {data.deck.title}</p>
-			<p class="font-mono text-sm text-muted-foreground">
-				Card {session.answered + 1} / {session.totalInPass}{session.repass ? ' · re-test' : ''}
-			</p>
+			<p class="font-mono text-sm text-muted-foreground"><span class="omr-bubble">Q {session.idx + 1}</span> / {session.queue.length}{session.repass ? ' · re-test' : ''}</p>
 		</div>
-		<div class="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-			<div class="h-full rounded-full bg-primary transition-all" style={`width: ${Math.min(100, (session.answered / Math.max(session.totalInPass, 1)) * 100)}%`} />
-		</div>
-
-		{#key session.current.id}
-			<Flashcard card={session.current} deck={data.deck} bind:flipped={session.flipped} />
-		{/key}
-
-		{#if session.rated}
-			<div class="space-y-4">
-				<FeedbackPanel items={session.feedbacks} />
-				<Button class="w-full" size="lg" onclick={() => session.next()} disabled={session.posting}>
-					{session.idx + 1 < session.queue.length || session.requeue.length > 0 ? 'Next card' : 'See results'}
-				</Button>
-			</div>
-		{:else}
-			<div class="grid grid-cols-4 gap-2">
-				<Button variant="outline" class="h-12 border-red-300 text-red-700 hover:bg-red-50" onclick={() => session.rate('again')} disabled={!session.flipped}>1 · Again</Button>
-				<Button variant="outline" class="h-12 border-amber-300 text-amber-700 hover:bg-amber-50" onclick={() => session.rate('hard')} disabled={!session.flipped}>2 · Hard</Button>
-				<Button variant="outline" class="h-12 border-green-300 text-green-700 hover:bg-green-50" onclick={() => session.rate('good')} disabled={!session.flipped}>3 · Good</Button>
-				<Button variant="outline" class="h-12 border-primary/40 text-primary hover:bg-primary/10" onclick={() => session.rate('easy')} disabled={!session.flipped}>4 · Easy</Button>
-			</div>
-			<p class="text-center text-xs text-muted-foreground">Tap the card or press Space to flip · 1–4 to rate</p>
-		{/if}
+		<Progress value={session.idx} max={session.queue.length} />
+		<Card>
+			<CardHeader><CardTitle class="text-xl leading-relaxed">{session.current.front}</CardTitle></CardHeader>
+			<CardContent class="flex flex-col gap-4">
+				{#if !session.flipped}
+					<Button class="w-full" size="lg" variant="outline" onclick={() => (session.flipped = true)}>Reveal answer</Button>
+				{:else}
+					<div class="rounded-md border border-primary/20 bg-accent p-4">
+						<p class="text-xs text-muted-foreground">Answer</p>
+						<p class="mt-1 text-base font-medium">{session.current.back}</p>
+						{#if session.current.hint}<p class="mt-2 text-xs text-muted-foreground">{session.current.hint}</p>{/if}
+					</div>
+					{#if session.rated}
+						<FeedbackPanel items={session.feedbacks} />
+						<Button class="w-full" size="lg" onclick={() => session.next()} disabled={session.posting}>
+							{session.idx + 1 < session.queue.length || session.requeue.length > 0 ? 'Next card' : 'See results'}
+						</Button>
+					{:else}
+						<div class="grid grid-cols-4 gap-2">
+							<Button variant="outline" class="h-12 border-red-300 text-red-700 hover:bg-red-50" onclick={() => session.rate('again')}>1 · Again</Button>
+							<Button variant="outline" class="h-12 border-amber-300 text-amber-700 hover:bg-amber-50" onclick={() => session.rate('hard')}>2 · Hard</Button>
+							<Button variant="outline" class="h-12 border-green-300 text-green-700 hover:bg-green-50" onclick={() => session.rate('good')}>3 · Good</Button>
+							<Button variant="outline" class="h-12 border-primary/40 text-primary hover:bg-primary/10" onclick={() => session.rate('easy')}>4 · Easy</Button>
+						</div>
+					{/if}
+				{/if}
+			</CardContent>
+		</Card>
 	{/if}
 </div>
