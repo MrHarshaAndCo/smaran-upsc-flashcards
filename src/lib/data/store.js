@@ -391,11 +391,33 @@ class MockStore {
 	}
 
 	async getQuestionFilters() {
-		return [];
+		const list = this.questions ?? [];
+		const bySubject = new Map();
+		for (const q of list) {
+			const cur = bySubject.get(q.subject) ?? { subject: q.subject, count: 0, subTopicsMap: new Map() };
+			cur.count++;
+			if (q.subTopic) {
+				const stCount = cur.subTopicsMap.get(q.subTopic) ?? 0;
+				cur.subTopicsMap.set(q.subTopic, stCount + 1);
+			}
+			bySubject.set(q.subject, cur);
+		}
+		return [...bySubject.values()].map((s) => ({
+			subject: s.subject,
+			count: s.count,
+			subTopics: [...s.subTopicsMap.entries()].map(([name, count]) => ({ name, count }))
+		}));
 	}
 
-	async getQuestions() {
-		return [];
+	async getQuestions({ subject = null, subTopic = null, limit = 20 } = {}) {
+		let res = this.questions ?? [];
+		if (subject) {
+			res = res.filter((q) => q.subject.toLowerCase() === subject.toLowerCase());
+		}
+		if (subTopic) {
+			res = res.filter((q) => q.subTopic && q.subTopic.toLowerCase() === subTopic.toLowerCase());
+		}
+		return res.slice(0, limit);
 	}
 
 	async recordNemesisEncounter({ userId, nemesisUserId, quizId, myCorrect, myTotal, theirCorrect, theirTotal, outcome }) {

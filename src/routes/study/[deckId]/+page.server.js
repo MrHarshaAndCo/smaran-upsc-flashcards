@@ -18,6 +18,8 @@ export async function load({ params, cookies }) {
 	let nemesisStats = null;
 	let nemesisName = null;
 	let nemesisAvatar = null;
+	let nemesisUserId = null;
+
 	if (userId) {
 		user = await store.getUser(userId);
 		const [states, meta, ns, nemesis] = await Promise.all([
@@ -30,7 +32,7 @@ export async function load({ params, cookies }) {
 		myMeta = meta;
 		nemesisStats = ns;
 		nemesisName = nemesis?.name ?? null;
-		nemesisUserId = nemesis?.userId ?? null,
+		nemesisUserId = nemesis?.userId ?? null;
 		nemesisAvatar = nemesis?.avatar ?? null;
 	}
 
@@ -44,6 +46,7 @@ export async function load({ params, cookies }) {
 		peerStats: Object.fromEntries(peerStats),
 		nemesisStats: nemesisStats ? Object.fromEntries(nemesisStats) : null,
 		nemesisName,
+		nemesisUserId,
 		nemesisAvatar
 	};
 }

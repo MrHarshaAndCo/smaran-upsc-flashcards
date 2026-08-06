@@ -1,41 +1,36 @@
-/* Smaran service worker: cache built assets, network-first navigation. */
-const CACHE = 'smaran-v1';
+const CACHE_NAME = 'makkhali-upsc-v1';
+const ASSETS_TO_CACHE = [
+  '/',
+  '/manifest.json',
+  '/favicon.png'
+];
 
-self.addEventListener('install', () => {
-	self.skipWaiting();
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(ASSETS_TO_CACHE);
+    })
+  );
+  self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-	event.waitUntil(
-		caches
-			.keys()
-			.then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
-			.then(() => self.clients.claim())
-	);
+  event.waitUntil(
+    caches.keys().then((keys) => {
+      return Promise.all(
+        keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+      );
+    })
+  );
+  self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
-	const url = new URL(event.request.url);
-	if (event.request.method !== 'GET' || url.origin !== location.origin) return;
-
-	// Built assets: cache-first.
-	if (url.pathname.startsWith('/_app/')) {
-		event.respondWith(
-			caches.open(CACHE).then(async (cache) => {
-				const hit = await cache.match(event.request);
-				if (hit) return hit;
-				const res = await fetch(event.request);
-				if (res.ok) cache.put(event.request, res.clone());
-				return res;
-			})
-		);
-		return;
-	}
-
-	// Navigation and everything else: network-first, offline → cached shell.
-	event.respondWith(
-		fetch(event.request).catch(() =>
-			caches.match(event.request).then((hit) => hit ?? caches.match('/'))
-		)
-	);
+  if (event.request.method !== 'GET') return;
+  event.respondWith(
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) return cachedResponse;
+      return fetch(event.request).catch(() => caches.match('/'));
+    })
+  );
 });

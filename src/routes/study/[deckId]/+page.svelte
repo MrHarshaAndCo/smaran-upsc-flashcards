@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	import { goto } from '$app/navigation';
 	import Flashcard from '$lib/components/Flashcard.svelte';
 	import FeedbackPanel from '$lib/components/FeedbackPanel.svelte';
@@ -8,7 +8,6 @@
 
 	let { data } = $props();
 
-	// svelte-ignore state_referenced_locally — server load data is static per page
 	const session = new StudySession({
 		deck: data.deck,
 		cards: data.cards,
@@ -21,28 +20,15 @@
 		userName: data.user?.name
 	});
 
-	$effect(() => {
-		function onKey(e) {
-			if (session.done) return;
-			if (e.key === ' ' || e.key === 'Enter') {
-				if (!session.flipped) {
-					e.preventDefault();
-					session.flipped = true;
-				}
-			} else if (session.flipped && !session.rated) {
-				const map = { '1': 'again', '2': 'hard', '3': 'good', '4': 'easy' };
-				if (map[e.key]) session.rate(map[e.key]);
-			}
-		}
-		window.addEventListener('keydown', onKey);
-		return () => window.removeEventListener('keydown', onKey);
-	});
+	function handleCardAnswer(isCorrect: boolean) {
+		session.rate(isCorrect ? 'good' : 'again');
+	}
 </script>
 
 <div class="mx-auto max-w-2xl space-y-6 pt-8">
 	{#if data.cards.length === 0}
-		<p class="py-16 text-center text-muted-foreground">This deck has no cards yet. Come back later.</p>
-	{:else if session.done}
+		<p class="py-16 text-center text-muted-foreground">This deck has no quiz questions yet. Come back later.</p>
+	{:else if session.done && session.summary}
 		<div class="space-y-4">
 			<p class="text-sm font-medium text-primary">Session report</p>
 			<h1 class="text-4xl font-bold tracking-tight">
@@ -50,11 +36,13 @@
 				<span class="text-lg font-medium text-muted-foreground"> — {session.summary.correct}/{session.summary.total} correct</span>
 			</h1>
 			<div class="grid grid-cols-3 gap-3">
-				<Card class="p-4"><p class="text-xs text-muted-foreground">Lapses</p><p class="text-2xl font-bold">{session.summary.lapses}</p></Card>
-				<Card class="p-4"><p class="text-xs text-muted-foreground">Missed</p><p class="text-2xl font-bold">{session.summary.missedCards}</p></Card>
-				<Card class="p-4"><p class="text-xs text-muted-foreground">Re-pass</p><p class="text-2xl font-bold">{session.repass ? 'Done' : 'None'}</p></Card>
+				<Card class="p-4"><p class="text-xs text-muted-foreground font-medium">Lapses</p><p class="text-2xl font-bold">{session.summary.lapses}</p></Card>
+				<Card class="p-4"><p class="text-xs text-muted-foreground font-medium">Missed</p><p class="text-2xl font-bold">{session.summary.missedCards}</p></Card>
+				<Card class="p-4"><p class="text-xs text-muted-foreground font-medium">Re-pass</p><p class="text-2xl font-bold">{session.repass ? 'Done' : 'None'}</p></Card>
 			</div>
-			<FeedbackPanel items={[session.summary.advice]} />
+			{#if session.summary.advice}
+				<FeedbackPanel items={[session.summary.advice]} />
+			{/if}
 			{#if session.summary.nemesisNote}
 				<FeedbackPanel items={[{ tone: 'neutral', title: 'Rival report', body: session.summary.nemesisNote }]} />
 			{/if}
@@ -63,34 +51,30 @@
 				<Button variant="outline" onclick={() => goto('/dashboard')} disabled={session.posting}>View dashboard</Button>
 			</div>
 		</div>
-	{:else}
+	{:else if session.current}
 		<div class="flex items-center justify-between">
 			<p class="text-sm font-medium text-primary">{data.deck.emoji} {data.deck.title}</p>
 			<p class="text-sm text-muted-foreground">
-				Card {session.answered + 1} / {session.totalInPass}{session.repass ? ' · re-test' : ''}
+				Question {session.answered + 1} / {session.totalInPass}{session.repass ? ' · re-test' : ''}
 			</p>
 		</div>
 		<div class="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-			<div class="h-full rounded-full bg-primary transition-all" style={`width: ${Math.min(100, (session.answered / Math.max(session.totalInPass, 1)) * 100)}%`} />
+			<div class="h-full rounded-full bg-primary transition-all" style={`width: ${Math.min(100, (session.answered / Math.max(session.totalInPass, 1)) * 100)}%`}></div>
 		</div>
 
 		{#key session.current.id}
-			<Flashcard card={session.current} deck={data.deck} bind:flipped={session.flipped} />
+			<Flashcard
+				card={session.current}
+				deck={data.deck}
+				onAnswer={handleCardAnswer}
+			/>
 		{/key}
 
 		{#if session.rated}
-			<div class="space-y-4">
+			<div class="space-y-4 pt-2">
 				<FeedbackPanel items={session.feedbacks} />
-				<Button class="w-full" size="lg" onclick={() => session.next()}>Next card</Button>
+				<Button class="w-full" size="lg" onclick={() => session.next()}>Next Question</Button>
 			</div>
-		{:else}
-			<div class="grid grid-cols-4 gap-2">
-				<Button variant="destructive" class="h-14" disabled={!session.flipped} onclick={() => session.rate('again')}>Again</Button>
-				<Button variant="secondary" class="h-14" disabled={!session.flipped} onclick={() => session.rate('hard')}>Hard</Button>
-				<Button variant="default" class="h-14" disabled={!session.flipped} onclick={() => session.rate('good')}>Good</Button>
-				<Button variant="outline" class="h-14" disabled={!session.flipped} onclick={() => session.rate('easy')}>Easy</Button>
-			</div>
-			<p class="text-center text-xs text-muted-foreground">Space to flip · 1–4 to rate</p>
 		{/if}
 	{/if}
 </div>
