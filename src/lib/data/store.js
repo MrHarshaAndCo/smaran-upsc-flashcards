@@ -188,7 +188,8 @@ class MockStore {
 		};
 		this.users.set(id, user);
 		this.reviewsByUser.set(id, []);
-		return user;
+		const { passwordHash: _h, passwordSalt: _s, ...safe } = user;
+		return safe;
 	}
 
 	async findUserByEmail(email) {
