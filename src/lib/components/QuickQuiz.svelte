@@ -26,9 +26,6 @@
 	let reveal = $state(false);
 	let wrongPick = $state(null);
 	let advancing = $state(false);
-	let dx = $state(0);
-	let dragging = $state(false);
-	let startX = 0;
 
 	const current = $derived(round[idx]);
 	const correctCount = $derived(results.filter((r) => r.correct).length);
@@ -55,16 +52,6 @@
 		if (correct) toast.success('Correct!', { description: 'Nice recall. On to the next.' });
 		else notifyMiss(q);
 		advance(correct ? 450 : 1600);
-	}
-
-	function answerBySwipe(knew) {
-		if (advancing || done) return;
-		const q = current;
-		results.push({ questionId: q.id, chosen: null, correct: knew, ms: Date.now() - startedAt });
-		wrongPick = null; reveal = true;
-		if (knew) toast.success('Correct!', { description: 'Nice recall. On to the next.' });
-		else notifyMiss(q);
-		advance(knew ? 450 : 1600);
 	}
 
 	function revealAnswer() {
@@ -112,12 +99,8 @@
 
 	function restart() {
 		roundSeed = `${quizId}:${Date.now()}`;
-		round = pickRound(roundSeed); idx = 0; results = []; misses = new Map(); done = false; reveal = false; wrongPick = null; advancing = false; dx = 0;
+		round = pickRound(roundSeed); idx = 0; results = []; misses = new Map(); done = false; reveal = false; wrongPick = null; advancing = false;
 	}
-
-	function onPointerDown(e) { dragging = true; startX = e.clientX; dx = 0; }
-	function onPointerMove(e) { if (!dragging) return; dx = e.clientX - startX; }
-	function onPointerUp() { if (!dragging) return; dragging = false; const d = dx; dx = 0; if (d > 90) answerBySwipe(true); else if (d < -90) answerBySwipe(false); }
 
 	function optionClass(i) {
 		if (!reveal) return 'border-input bg-background hover:bg-muted active:scale-[0.99]';
@@ -137,12 +120,12 @@
 		</div>
 	{:else}
 		<div class="flex items-center justify-between">
-			<div><p class="font-mono text-xs font-medium text-primary">{emoji} {title}</p><p class="text-xs text-muted-foreground">{round.length} random questions · swipe or tap</p></div>
+			<div><p class="font-mono text-xs font-medium text-primary">{emoji} {title}</p><p class="text-xs text-muted-foreground">{round.length} random questions · tap to answer</p></div>
 			<div class="text-right"><p class="font-mono text-2xl font-semibold tracking-tight">{correctCount}<span class="text-base font-normal text-muted-foreground">/{results.length}</span></p><p class="text-xs text-muted-foreground">correct</p></div>
 		</div>
 		<div class="h-1.5 w-full overflow-hidden rounded-full bg-muted"><div class="h-full rounded-full bg-primary transition-all duration-300" style={`width: ${progressPct}%`} /></div>
 
-		<Card class="touch-none select-none p-6" style={dragging ? `transform: translateX(${dx}px) rotate(${dx / 24}deg)` : 'transition: transform 200ms ease'} onpointerdown={onPointerDown} onpointermove={onPointerMove} onpointerup={onPointerUp} onpointerleave={onPointerUp} onpointercancel={onPointerUp}>
+		<Card class="p-6">
 			<div class="mb-3 flex items-center justify-between text-xs text-muted-foreground"><span class="font-mono">{idx + 1} / {round.length}</span><span class="rounded bg-muted px-2 py-0.5 font-mono">{emoji}{#if current.sourceQuiz} · {current.sourceQuiz}{/if}</span></div>
 			<h2 class="text-xl font-semibold leading-relaxed">{current.question}</h2>
 			{#if reveal && wrongPick === null}<p class="mt-4 text-sm font-medium text-green-700">✓ {current.options[current.correctIndex]}</p>{/if}
