@@ -211,6 +211,35 @@ class MockStore {
 		return [...this.users.values()];
 	}
 
+	async getQuestionFilters() {
+		return [];
+	}
+
+	async getQuestions() {
+		return [];
+	}
+
+	async recordNemesisEncounter({ userId, nemesisUserId, quizId, myCorrect, myTotal, theirCorrect, theirTotal, outcome }) {
+		this.nemesisSeq = (this.nemesisSeq ?? 0) + 1;
+		const entry = { id: this.nemesisSeq, userId, nemesisUserId, quizId, myCorrect, myTotal, theirCorrect, theirTotal, outcome, roast: null, createdAt: Date.now() };
+		(this.nemesisHistory = this.nemesisHistory ?? []).push(entry);
+		return entry;
+	}
+
+	async getNemesisHistory(userId, nemesisUserId, limit = 10) {
+		return (this.nemesisHistory ?? []).filter(h => h.userId === userId && h.nemesisUserId === nemesisUserId).slice(-limit).reverse();
+	}
+
+	async getNemesisRecord(userId, nemesisUserId) {
+		const all = (this.nemesisHistory ?? []).filter(h => h.userId === userId && h.nemesisUserId === nemesisUserId);
+		return { wins: all.filter(h => h.outcome === "win").length, losses: all.filter(h => h.outcome === "loss").length, draws: all.filter(h => h.outcome === "draw").length, total: all.length, history: all.slice(-20).reverse() };
+	}
+
+	async setNemesisRoast(encounterId, roast) {
+		const h = (this.nemesisHistory ?? []).find(h => h.id === encounterId);
+		if (h) h.roast = roast;
+	}
+
 	// ---- card state & reviews -------------------------------------------
 
 	async getCardStates(userId) {
@@ -525,11 +554,25 @@ const SCHEMA_STATEMENTS = [
 	  id bigserial primary key, user_id text not null, quiz_id text not null,
 	  question_id text not null, correct boolean not null, at bigint not null
 	)`,
+	`CREATE TABLE IF NOT EXISTS questions (
+	  id text primary key, subject text not null, sub_topic text,
+	  question text not null, options jsonb not null, answer_index int not null,
+	  explanation text, created_at bigint not null default 0
+	)`,
 	'CREATE INDEX IF NOT EXISTS idx_reviews_user ON reviews (user_id, deck_id)',
 	'CREATE INDEX IF NOT EXISTS idx_states_user ON card_states (user_id)',
 	'CREATE INDEX IF NOT EXISTS idx_devices_user ON devices (user_id)',
 	'CREATE INDEX IF NOT EXISTS idx_quiz_answers_quiz ON quiz_answers (quiz_id, question_id)',
-	'CREATE INDEX IF NOT EXISTS idx_quiz_sessions_user ON quiz_sessions (user_id)'
+	'CREATE INDEX IF NOT EXISTS idx_quiz_sessions_user ON quiz_sessions (user_id)',
+	'CREATE INDEX IF NOT EXISTS idx_questions_subject ON questions (subject)',
+	'CREATE INDEX IF NOT EXISTS idx_questions_subtopic ON questions (sub_topic)',
+`CREATE TABLE IF NOT EXISTS nemesis_history (
+  id bigserial primary key, user_id text not null, nemesis_user_id text not null,
+  quiz_id text not null, my_correct int not null, my_total int not null,
+  their_correct int not null, their_total int not null,
+  outcome text not null, roast text, created_at bigint not null
+)`,
+'CREATE INDEX IF NOT EXISTS idx_nemesis_history_users ON nemesis_history (user_id, nemesis_user_id, created_at DESC)',
 ];
 
 class NeonStore {
@@ -573,7 +616,7 @@ class NeonStore {
 	}
 
 	async getUser(userId) {
-		const rows = await this.sql('SELECT id, name, avatar, created_at AS "createdAt" FROM users WHERE id = $1', [userId]);
+		const rows = await this.sql('SELECT id, name, avatar, created_at AS createdAt FROM users WHERE id = $1', [userId]);
 		return rows[0] ?? null;
 	}
 
@@ -599,7 +642,7 @@ class NeonStore {
 		const needle = email?.trim().toLowerCase();
 		if (!needle) return null;
 		const rows = await this.sql(
-			'SELECT id, name, avatar, created_at AS "createdAt", email, password_hash AS "passwordHash", password_salt AS "passwordSalt" FROM users WHERE lower(email) = $1',
+			'SELECT id, name, avatar, created_at AS createdAt, email, password_hash AS "passwordHash", password_salt AS "passwordSalt" FROM users WHERE lower(email) = $1',
 			[needle]
 		);
 		return rows[0] ?? null;
@@ -614,7 +657,7 @@ class NeonStore {
 	}
 
 	async listUsers() {
-		return this.sql('SELECT id, name, avatar, created_at AS "createdAt" FROM users');
+		return this.sql('SELECT id, name, avatar, created_at AS createdAt FROM users');
 	}
 
 	async getCardStates(userId) {
@@ -819,10 +862,10 @@ class NeonStore {
 	async h2hAcrossDecks(userId, otherUserId) {
 		const rows = await this.sql(
 			`SELECT deck_id AS "deckId",
-			        count(*) FILTER (WHERE user_id = $1 AND rating <> 'again')::int AS "myCorrect",
-			        count(*) FILTER (WHERE user_id = $1)::int AS "myTotal",
-			        count(*) FILTER (WHERE user_id = $2 AND rating <> 'again')::int AS "theirCorrect",
-			        count(*) FILTER (WHERE user_id = $2)::int AS "theirTotal"
+			        count(*) FILTER (WHERE user_id = $1 AND rating <> 'again')::int AS myCorrect,
+			        count(*) FILTER (WHERE user_id = $1)::int AS myTotal,
+			        count(*) FILTER (WHERE user_id = $2 AND rating <> 'again')::int AS theirCorrect,
+			        count(*) FILTER (WHERE user_id = $2)::int AS theirTotal
 			 FROM reviews WHERE user_id IN ($1, $2) GROUP BY deck_id`,
 			[userId, otherUserId]
 		);
@@ -855,7 +898,7 @@ class NeonStore {
 
 	async listDevices(userId) {
 		return this.sql(
-			'SELECT device_id AS "deviceId", platform, created_at AS "createdAt", last_seen AS "lastSeen" FROM devices WHERE user_id = $1 ORDER BY created_at DESC',
+			'SELECT device_id AS "deviceId", platform, created_at AS createdAt, last_seen AS "lastSeen" FROM devices WHERE user_id = $1 ORDER BY created_at DESC',
 			[userId]
 		);
 	}
@@ -905,21 +948,100 @@ class NeonStore {
 
 	async getUserQuizSessions(userId, limit = 6) {
 		const rows = await this.sql(
-			'SELECT id, quiz_id AS "quizId", started_at AS "startedAt", ended_at AS "endedAt", correct, total FROM quiz_sessions WHERE user_id = $1 ORDER BY ended_at DESC LIMIT $2',
+			'SELECT id, quiz_id AS quizId, started_at AS "startedAt", ended_at AS "endedAt", correct, total FROM quiz_sessions WHERE user_id = $1 ORDER BY ended_at DESC LIMIT $2',
 			[userId, limit]
 		);
 		return rows.map((r) => ({ id: r.id, quizId: r.quizId, startedAt: r.startedAt, endedAt: r.endedAt, correct: r.correct, total: r.total }));
 	}
 
+	async getQuestionFilters() {
+		const rows = await this.sql(
+			`SELECT subject,
+			        count(*)::int AS n,
+			        jsonb_agg(DISTINCT jsonb_build_object('name', sub_topic, 'count', sub_count)) AS subtopics
+			 FROM (
+			   SELECT subject, sub_topic, count(*)::int AS sub_count
+			   FROM questions WHERE sub_topic IS NOT NULL
+			   GROUP BY subject, sub_topic
+			 ) t
+			 GROUP BY subject ORDER BY subject`
+		);
+		return rows.map((r) => ({
+			subject: r.subject,
+			count: r.n,
+			subTopics: (r.subtopics ?? []).map((s) => ({ name: s.name, count: s.count }))
+		}));
+	}
+
+	async getQuestions({ subject = null, subTopic = null, limit = 20 } = {}) {
+		const conds = [];
+		const params = [];
+		if (subject) {
+			params.push(subject);
+			conds.push(`subject = $${params.length}`);
+		}
+		if (subTopic) {
+			params.push(subTopic);
+			conds.push(`sub_topic = $${params.length}`);
+		}
+		params.push(Math.min(Math.max(limit, 1), 100));
+		const where = conds.length ? `WHERE ${conds.join(' AND ')}` : '';
+		const rows = await this.sql(
+			`SELECT id, subject, sub_topic AS "subTopic", question, options, answer_index AS "answerIndex", explanation
+			 FROM questions ${where} ORDER BY random() LIMIT $${params.length}`,
+			params
+		);
+		return rows.map((r) => ({
+			id: r.id,
+			subject: r.subject,
+			subTopic: r.subTopic,
+			question: r.question,
+			options: typeof r.options === 'string' ? JSON.parse(r.options) : r.options,
+			answerIndex: r.answerIndex,
+			explanation: r.explanation
+		}));
+	}
+
+
+	async recordNemesisEncounter({ userId, nemesisUserId, quizId, myCorrect, myTotal, theirCorrect, theirTotal, outcome }) {
+		const rows = await this.sql(
+			"INSERT INTO nemesis_history (user_id, nemesis_user_id, quiz_id, my_correct, my_total, their_correct, their_total, outcome, created_at) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING id",
+			[userId, nemesisUserId, quizId, myCorrect, myTotal, theirCorrect, theirTotal, outcome, Date.now()]
+		);
+		return { id: rows[0].id };
+	}
+
+	async getNemesisHistory(userId, nemesisUserId, limit = 10) {
+		return this.sql(
+			"SELECT id, user_id AS userId, nemesis_user_id AS nemesisUserId, quiz_id AS quizId, my_correct AS myCorrect, my_total AS myTotal, their_correct AS theirCorrect, their_total AS theirTotal, outcome, roast, created_at AS createdAt FROM nemesis_history WHERE user_id = $1 AND nemesis_user_id = $2 ORDER BY created_at DESC LIMIT $3",
+			[userId, nemesisUserId, limit]
+		);
+	}
+
+	async getNemesisRecord(userId, nemesisUserId) {
+		const all = await this.sql(
+			"SELECT outcome FROM nemesis_history WHERE user_id = $1 AND nemesis_user_id = $2",
+			[userId, nemesisUserId]
+		);
+		const wins = all.filter(h => h.outcome === "win").length;
+		const losses = all.filter(h => h.outcome === "loss").length;
+		const draws = all.filter(h => h.outcome === "draw").length;
+		const history = await this.getNemesisHistory(userId, nemesisUserId, 20);
+		return { wins, losses, draws, total: all.length, history };
+	}
+
+	async setNemesisRoast(encounterId, roast) {
+		await this.sql("UPDATE nemesis_history SET roast = $2 WHERE id = $1", [encounterId, roast]);
+	}
 	async getCardDuels(userId, otherUserId, deckId) {
 		const filter = deckId ? 'AND deck_id = $3' : '';
 		const params = deckId ? [userId, otherUserId, deckId] : [userId, otherUserId];
 		const rows = await this.sql(
 			`SELECT card_id AS "cardId",
-			        count(*) FILTER (WHERE user_id = $1 AND rating <> 'again')::int AS "myCorrect",
-			        count(*) FILTER (WHERE user_id = $1)::int AS "myTotal",
-			        count(*) FILTER (WHERE user_id = $2 AND rating <> 'again')::int AS "theirCorrect",
-			        count(*) FILTER (WHERE user_id = $2)::int AS "theirTotal"
+			        count(*) FILTER (WHERE user_id = $1 AND rating <> 'again')::int AS myCorrect,
+			        count(*) FILTER (WHERE user_id = $1)::int AS myTotal,
+			        count(*) FILTER (WHERE user_id = $2 AND rating <> 'again')::int AS theirCorrect,
+			        count(*) FILTER (WHERE user_id = $2)::int AS theirTotal
 			 FROM reviews WHERE user_id IN ($1, $2) ${filter} GROUP BY card_id`,
 			params
 		);
@@ -980,6 +1102,8 @@ export function _resetStore() {
  * @property {(name: string, credentials?: { email?: string, password?: string }) => Promise<User>} createUser
  * @property {(email: string) => Promise<User|null>} findUserByEmail
  * @property {(email: string, password: string) => Promise<User|null>} verifyCredentials
+ * @property {() => Promise<Array<{ subject: string, count: number, subTopics: Array<{ name: string, count: number }> }>>} getQuestionFilters
+ * @property {(args?: { subject?: string|null, subTopic?: string|null, limit?: number }) => Promise<Array<{ id: string, subject: string, subTopic: string|null, question: string, options: string[], answerIndex: number, explanation: string|null }>>} getQuestions
  * @property {() => Promise<User[]>} listUsers
  * @property {(userId: string) => Promise<Map<string, CardState>>} getCardStates
  * @property {(userId: string, cardId: string) => Promise<CardState|null>} getCardState

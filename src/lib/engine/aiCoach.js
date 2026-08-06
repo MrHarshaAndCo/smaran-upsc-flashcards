@@ -89,3 +89,48 @@ export function deterministicCoach(score, total) {
 	}
 	return 'That score is information, not identity. You missed what you have not studied deliberately enough. Take the missed set, read each answer aloud, and come back in 24 hours — expect the curve to bend.';
 }
+
+/**
+ * DeepSeek-generated nemesis roast, aware of the full duel history.
+ */
+export async function requestNemesisRoast({
+	userName, nemesisName, outcome, myScore, myTotal, theirScore, theirTotal, record, apiKey, model
+}) {
+	const system = [
+		'You are a friendly study rival in a UPSC exam prep app called The Makkhali Project.',
+		'Write ONE sentence — a playful, motivating roast — based on the head-to-head record.',
+		'Reference the history if there is one, the current outcome, and use the student names.',
+		'Never mean. Always push. No emojis.'
+	].join(' ');
+	const myRate = myTotal ? Math.round((myScore / myTotal) * 100) : 0;
+	const theirRate = theirTotal ? Math.round((theirScore / theirTotal) * 100) : 0;
+	const user = [
+		`${userName} scored ${myRate}% vs ${nemesisName} ${theirRate}% (${outcome}).`,
+		`Record: ${record.wins} wins, ${record.losses} losses, ${record.draws} draws across ${record.total} encounters.`,
+		record.total >= 2 ? 'Acknowledge the history. One sentence.' : 'First encounter — welcome the rivalry. One sentence.'
+	].join('\n');
+	if (!apiKey) return deterministicNemesisRoast({ outcome, myRate, theirRate, record, userName, nemesisName });
+	try {
+		const controller = new AbortController();
+		const timer = setTimeout(() => controller.abort(), 12000);
+		const res = await fetch('https://api.deepseek.com/chat/completions', {
+			method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` },
+			body: JSON.stringify({ model: model ?? 'deepseek-chat', messages: [{ role: 'system', content: system }, { role: 'user', content: user }], max_tokens: 120, temperature: 0.9 }),
+			signal: controller.signal
+		});
+		clearTimeout(timer);
+		if (!res.ok) throw new Error(`deepseek ${res.status}`);
+		const data = await res.json();
+		return data?.choices?.[0]?.message?.content?.trim() || deterministicNemesisRoast({ outcome, myRate, theirRate, record, userName, nemesisName });
+	} catch {
+		return deterministicNemesisRoast({ outcome, myRate, theirRate, record, userName, nemesisName });
+	}
+}
+
+export function deterministicNemesisRoast({ outcome, myRate, theirRate, record, userName, nemesisName }) {
+	if (record.total >= 3 && outcome === 'loss') return `${nemesisName} leads ${record.wins}-${record.losses}. ${userName}, the gap is real — close it before it becomes tradition.`;
+	if (outcome === 'win' && record.wins >= 2) return `${userName} just took that round from ${nemesisName} — ${record.wins}-${record.losses} now. The comeback arc is writing itself.`;
+	if (outcome === 'win') return `First win against ${nemesisName}. Mark the date — rivalries look back at the first one.`;
+	if (outcome === 'loss') return `${myRate}% vs ${theirRate}%. ${nemesisName} will remember that — make them remember the next one too.`;
+	return `Dead even at ${myRate}%. The next round at ${nemesisName}'s pace decides.`;
+}

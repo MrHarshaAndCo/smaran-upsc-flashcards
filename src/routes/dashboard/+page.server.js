@@ -6,9 +6,9 @@ import { getNemesisData } from '$lib/nemesisData.js';
 export async function load({ cookies }) {
 	const store = await getStore();
 	const userId = cookies.get('smaran_u');
-	if (!userId) redirect(307, '/');
+	if (!userId) redirect(307, '/quiz');
 	const user = await store.getUser(userId);
-	if (!user) redirect(307, '/');
+	if (!user) redirect(307, '/quiz');
 
 	const [summary, sessions, leaderboard, nemesis, devices, quizSessions] = await Promise.all([
 		store.getUserSummary(userId),
