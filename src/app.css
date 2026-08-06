@@ -94,6 +94,30 @@ body {
 
 ::selection { background: color-mix(in srgb, var(--primary) 22%, transparent); }
 
+/* Flashcard nav item — the lit card in the deck. */
+@keyframes flashcard-glow {
+	0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--primary) 30%, transparent); }
+	50% { box-shadow: 0 0 0 5px color-mix(in srgb, var(--primary) 10%, transparent); }
+}
+.nav-flashcard {
+	border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
+	background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 12%, transparent), color-mix(in srgb, var(--primary) 4%, transparent));
+	color: var(--primary);
+	animation: flashcard-glow 3.2s ease-in-out infinite;
+}
+.nav-flashcard-active {
+	background: var(--primary);
+	border-color: var(--primary);
+	color: var(--primary-foreground);
+}
+.nav-flashcard-mobile {
+	border-radius: 0.75rem;
+	animation: flashcard-glow 3.2s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+	.nav-flashcard, .nav-flashcard-mobile { animation: none; }
+}
+
 /* Red notebook margin — the signature device. */
 .margin-rule {
 	position: relative;

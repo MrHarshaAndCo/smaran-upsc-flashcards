@@ -54,7 +54,24 @@ export class StudySession {
 		this.myMeta = myMeta;
 		if (userName) this.userName = userName;
 		this.states = new Map(Object.entries(cardStates).map(([k, v]) => [k, { ...v }]));
-		this.queue = seededShuffle(cards, `${deck.id}:0`);
+		// Due cards first, then never-seen cards, then the rest — spaced
+		// repetition should surface the cards the scheduler wants back.
+		const now = Date.now();
+		const due = [];
+		const fresh = [];
+		const rest = [];
+		for (const card of cards) {
+			const st = this.states.get(card.id);
+			if (st && st.due <= now) due.push(card);
+			else if (!st) fresh.push(card);
+			else rest.push(card);
+		}
+		const seed = `${deck.id}:0`;
+		this.queue = [
+			...seededShuffle(due, seed),
+			...seededShuffle(fresh, `${seed}:new`),
+			...seededShuffle(rest, `${seed}:rest`)
+		];
 	}
 
 	get current() {

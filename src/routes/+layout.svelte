@@ -53,7 +53,7 @@
 			</a>
 			<nav class="hidden items-center gap-1 md:flex ml-2">
 				{#each links as link}
-					<a href={link.href} class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors {active(link.href) ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}">
+					<a href={link.href} class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors {link.href === '/decks' ? (active(link.href) ? 'nav-flashcard nav-flashcard-active' : 'nav-flashcard') : active(link.href) ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}">
 						<link.icon class="size-4" /> {link.label}
 					</a>
 				{/each}
@@ -73,7 +73,7 @@
 	<nav class="fixed bottom-0 left-0 right-0 z-50 border-t bg-background md:hidden">
 		<div class="mx-auto flex h-16 max-w-5xl items-center justify-around px-2">
 			{#each links as link}
-				<a href={link.href} class="flex flex-col items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium {active(link.href) ? 'text-primary' : 'text-muted-foreground'}">
+				<a href={link.href} class="flex flex-col items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium {link.href === '/decks' ? 'nav-flashcard-mobile px-3 text-primary' : ''} {active(link.href) ? 'text-primary' : 'text-muted-foreground'}">
 					<link.icon class="size-5" /> <span>{link.label}</span>
 				</a>
 			{/each}
