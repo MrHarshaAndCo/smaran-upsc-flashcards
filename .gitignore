@@ -8,3 +8,5 @@ build/
 !.env.example
 *.local
 .DS_Store
+*.parquet
+scripts/questions.json

@@ -997,15 +997,16 @@ class NeonStore {
 
 	async getQuestionFilters() {
 		const rows = await this.sql(
-			`SELECT subject,
-			        count(*)::int AS n,
-			        jsonb_agg(DISTINCT jsonb_build_object('name', sub_topic, 'count', sub_count)) AS subtopics
-			 FROM (
+			`SELECT s.subject,
+			        s.n,
+			        COALESCE(jsonb_agg(DISTINCT jsonb_build_object('name', st.sub_topic, 'count', st.sub_count)) FILTER (WHERE st.sub_topic IS NOT NULL), '[]'::jsonb) AS subtopics
+			 FROM (SELECT subject, count(*)::int AS n FROM questions GROUP BY subject) s
+			 LEFT JOIN (
 			   SELECT subject, sub_topic, count(*)::int AS sub_count
 			   FROM questions WHERE sub_topic IS NOT NULL
 			   GROUP BY subject, sub_topic
-			 ) t
-			 GROUP BY subject ORDER BY subject`
+			 ) st USING (subject)
+			 GROUP BY s.subject, s.n ORDER BY s.subject`
 		);
 		return rows.map((r) => ({
 			subject: r.subject,
