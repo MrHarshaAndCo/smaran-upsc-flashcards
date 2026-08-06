@@ -2,7 +2,7 @@
 	import '../app.css';
 	import { page } from '$app/state';
 	import { invalidateAll } from '$app/navigation';
-	import { PenLine, BookOpen, Users, Trophy, LogOut, Settings } from 'lucide-svelte';
+	import { PenLine, BookOpen, GraduationCap, Users, Trophy, LogOut, Settings } from 'lucide-svelte';
 	import { Toaster } from 'svelte-sonner';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '$lib/components/ui/card';
@@ -16,6 +16,7 @@
 
 	const links = [
 		{ href: '/quiz', label: 'Quiz', icon: PenLine },
+		{ href: '/study', label: 'Study', icon: GraduationCap },
 		{ href: '/decks', label: 'Flashcard', icon: BookOpen },
 		{ href: '/colab', label: 'Colab', icon: Users },
 		{ href: '/leaderboard', label: 'Board', icon: Trophy }
