@@ -3,35 +3,39 @@
 
 	let { entries = [], limit = 0, highlight = null, deckTitle = '' } = $props();
 	const shown = $derived(limit > 0 ? entries.slice(0, limit) : entries);
-
-	function rankClass(i) {
-		return i === 0 ? 'r1' : i === 1 ? 'r2' : i === 2 ? 'r3' : '';
-	}
+	const meId = $derived(page.data.user?.id);
 </script>
 
 {#if shown.length === 0}
-	<div class="empty">No one has reviewed {deckTitle ? `“${deckTitle}”` : 'these cards'} yet. Be the first.</div>
+	<p class="py-8 text-center text-sm text-muted-foreground">
+		No one has reviewed {deckTitle ? `“${deckTitle}”` : 'these cards'} yet. Be the first.
+	</p>
 {:else}
-	<table class="table">
-		<thead>
-			<tr>
-				<th>#</th>
-				<th>Student</th>
-				<th>Accuracy</th>
-				<th>Reviews</th>
-				<th>Streak</th>
-			</tr>
-		</thead>
-		<tbody>
-			{#each shown as entry, i (entry.userId)}
-				<tr class:me={entry.userId === highlight || entry.userId === page.data.user?.id}>
-					<td><span class="rank {rankClass(i)}">{i + 1}</span></td>
-					<td>{entry.avatar} <strong>{entry.name}</strong>{entry.userId === page.data.user?.id ? ' (you)' : ''}</td>
-					<td>{Math.round(entry.accuracy * 100)}%</td>
-					<td>{entry.reviews}</td>
-					<td>{entry.streak > 0 ? `🔥 ${entry.streak}` : '—'}</td>
+	<div class="overflow-x-auto rounded-lg border">
+		<table class="w-full text-sm">
+			<thead>
+				<tr class="border-b bg-muted/50 text-left text-xs uppercase tracking-wide text-muted-foreground">
+					<th class="px-4 py-2.5 font-medium">#</th>
+					<th class="px-4 py-2.5 font-medium">Student</th>
+					<th class="px-4 py-2.5 font-medium">Accuracy</th>
+					<th class="px-4 py-2.5 font-medium">Reviews</th>
+					<th class="px-4 py-2.5 font-medium">Streak</th>
 				</tr>
-			{/each}
-		</tbody>
-	</table>
+			</thead>
+			<tbody>
+				{#each shown as entry, i (entry.userId)}
+					<tr class="border-b last:border-0 {entry.userId === highlight || entry.userId === meId ? 'bg-primary/5' : ''}">
+						<td class="px-4 py-2.5 font-medium text-muted-foreground">{i + 1}</td>
+						<td class="px-4 py-2.5">
+							{entry.avatar} <span class="font-medium">{entry.name}</span>
+							{#if entry.userId === meId}<span class="text-xs text-muted-foreground"> (you)</span>{/if}
+						</td>
+						<td class="px-4 py-2.5 font-medium">{Math.round(entry.accuracy * 100)}%</td>
+						<td class="px-4 py-2.5 text-muted-foreground">{entry.reviews}</td>
+						<td class="px-4 py-2.5">{entry.streak > 0 ? `🔥 ${entry.streak}` : '—'}</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	</div>
 {/if}

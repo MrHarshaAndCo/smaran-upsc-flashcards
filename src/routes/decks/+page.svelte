@@ -4,19 +4,16 @@
 	let { data } = $props();
 </script>
 
-<div class="wrap" style="padding-top: 40px">
-	<p class="eyebrow">Study sets</p>
-	<h1 style="margin-bottom: 6px">All decks</h1>
-	<p class="muted" style="max-width: 56ch">
-		Pick a deck, study the cards, and let the scheduler tell you when to come back. Your
-		progress on each deck is marked below.
-	</p>
-
-	<section class="section">
-		<div class="deck-grid">
-			{#each data.decks as deck (deck.id)}
-				<DeckCard {deck} progress={data.progress.get(deck.id) ?? null} />
-			{/each}
-		</div>
-	</section>
+<div class="space-y-8 pt-8">
+	<div>
+		<h1 class="text-3xl font-bold tracking-tight">All decks</h1>
+		<p class="mt-1 text-muted-foreground">
+			Pick a deck and study. Your progress on each set is marked below.
+		</p>
+	</div>
+	<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+		{#each data.decks as deck (deck.id)}
+			<DeckCard {deck} progress={data.progress.get(deck.id) ?? null} />
+		{/each}
+	</div>
 </div>

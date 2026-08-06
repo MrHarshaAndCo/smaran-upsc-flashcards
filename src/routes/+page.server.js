@@ -1,16 +1,16 @@
 import { getStore } from '$lib/data/store.js';
+import { QUIZZES } from '$lib/data/quizzes.js';
 
 export async function load({ cookies }) {
 	const store = await getStore();
-	const userId = cookies.get('smaran_u') ?? null;
-	const [decks, leaderboard] = await Promise.all([store.getDecks(), store.leaderboardEntries()]);
-	let nemesis = null;
-	let summary = null;
-	if (userId) {
-		const [n, s] = await Promise.all([store.findNemesis(userId), store.getUserSummary(userId)]);
-		nemesis = n;
-		summary = s;
-	}
-	const totalCards = decks.reduce((a, d) => a + d.cardCount, 0);
-	return { decks, leaderboard: leaderboard.slice(0, 5), userId, nemesis, summary, totalCards, peerCount: leaderboard.length };
+	const userId = cookies.get('smaran_u');
+	// Quick quiz on the home page — the mixed grand test is a good fast set.
+	const quiz = QUIZZES.find((q) => q.id === 'quiz-mixed') ?? QUIZZES[0];
+
+	const [summary, nemesis] = await Promise.all([
+		store.getUserSummary(userId),
+		store.findNemesis(userId)
+	]);
+
+	return { quiz, summary, nemesis };
 }

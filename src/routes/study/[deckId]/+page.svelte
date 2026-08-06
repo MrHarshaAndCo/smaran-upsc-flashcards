@@ -2,7 +2,9 @@
 	import { goto } from '$app/navigation';
 	import Flashcard from '$lib/components/Flashcard.svelte';
 	import FeedbackPanel from '$lib/components/FeedbackPanel.svelte';
-	import NameForm from '$lib/components/NameForm.svelte';
+	import { Button } from '$lib/components/ui/button';
+	import { Card } from '$lib/components/ui/card';
+	import { Separator } from '$lib/components/ui/separator';
 	import { applyRating, initialCardState, DAY_MS } from '$lib/engine/scheduler.js';
 	import { memoryFeedback, peerFeedback, sessionAdvice } from '$lib/engine/feedback.js';
 	import { h2hRecord } from '$lib/engine/nemesis.js';
@@ -25,9 +27,7 @@
 		return a;
 	}
 
-	// svelte-ignore state_referenced_locally — route params are static for this page
 	const deckId = data.deck.id;
-	// svelte-ignore state_referenced_locally — queue is a one-time seeded shuffle
 	let queue = $state(seededShuffle(data.cards, deckId));
 	let idx = $state(0);
 	let flipped = $state(false);
@@ -38,7 +38,6 @@
 	let repass = $state(false);
 	let done = $state(false);
 	let posting = $state(false);
-	// svelte-ignore state_referenced_locally — server state snapshot at session start
 	let states = $state(new Map(Object.entries(data.cardStates).map(([k, v]) => [k, { ...v }])));
 	let summary = $state(null);
 	let cardShownAt = Date.now();
@@ -140,7 +139,7 @@
 					body: JSON.stringify({ deckId, startedAt, endedAt, results })
 				});
 			} catch {
-				// Session still counts on screen; the record is best-effort here.
+				// Best-effort
 			}
 			posting = false;
 		}
@@ -179,81 +178,58 @@
 	});
 </script>
 
-<div class="wrap" style="padding-top: 32px; max-width: 760px">
-	{#if !data.user}
-		<div class="gate">
-			<p class="eyebrow">{data.deck.emoji} {data.deck.title}</p>
-			<h1>Enter your name to study</h1>
-			<p class="muted">
-				Your reviews get scheduled, scored against peers, and counted against your rival.
-				No password — just a name on the board.
-			</p>
-			<div style="margin-top: 20px; display: flex; justify-content: center">
-				<NameForm />
-			</div>
-		</div>
-	{:else if data.cards.length === 0}
-		<div class="empty">
-			<h2>This deck has no cards yet</h2>
-			<p>Come back later — the set is still being written.</p>
-		</div>
+<div class="mx-auto max-w-2xl space-y-6 pt-8">
+	{#if data.cards.length === 0}
+		<p class="py-16 text-center text-muted-foreground">This deck has no cards yet. Come back later.</p>
 	{:else if done}
-		<div class="card" style="padding: 30px">
-			<p class="eyebrow">Session report</p>
-			<h1 style="font-size: 2.6rem">
+		<div class="space-y-4">
+			<p class="text-sm font-medium text-primary">Session report</p>
+			<h1 class="text-4xl font-bold tracking-tight">
 				{Math.round((summary.correct / Math.max(summary.total, 1)) * 100)}%
-				<span class="muted" style="font-size: 1.2rem; font-weight: 600"> — {summary.correct}/{summary.total} correct</span>
+				<span class="text-lg font-medium text-muted-foreground"> — {summary.correct}/{summary.total} correct</span>
 			</h1>
-			<div class="stat-row" style="margin-top: 16px">
-				<div class="stat"><div class="label">Lapses</div><div class="value">{summary.lapses}</div></div>
-				<div class="stat"><div class="label">Cards missed</div><div class="value">{summary.missedCards}</div></div>
-				<div class="stat"><div class="label">Re-pass</div><div class="value">{repass ? 'Done' : 'None needed'}</div></div>
+			<div class="grid grid-cols-3 gap-3">
+				<Card class="p-4"><p class="text-xs text-muted-foreground">Lapses</p><p class="text-2xl font-bold">{summary.lapses}</p></Card>
+				<Card class="p-4"><p class="text-xs text-muted-foreground">Missed</p><p class="text-2xl font-bold">{summary.missedCards}</p></Card>
+				<Card class="p-4"><p class="text-xs text-muted-foreground">Re-pass</p><p class="text-2xl font-bold">{repass ? 'Done' : 'None'}</p></Card>
 			</div>
-
-			<hr class="hr" />
-			<div class="feedback {summary.advice.tone}">
-				<div class="fb-title">{summary.advice.title}</div>
-				<div class="fb-body">{summary.advice.body}</div>
-			</div>
+			<FeedbackPanel items={[summary.advice]} />
 			{#if summary.nemesisNote}
-				<div class="feedback neutral" style="margin-top: 10px">
-					<div class="fb-title">Rival report</div>
-					<div class="fb-body">{summary.nemesisNote}</div>
-				</div>
+				<FeedbackPanel items={[{ tone: 'neutral', title: 'Rival report', body: summary.nemesisNote }]} />
 			{/if}
-
-			<div style="display: flex; gap: 10px; margin-top: 22px; flex-wrap: wrap">
-				<button class="btn btn-primary" onclick={restart} disabled={posting}>Study again</button>
-				<button class="btn btn-ghost" onclick={() => goto('/dashboard')} disabled={posting}>View dashboard</button>
+			<div class="flex flex-wrap gap-3 pt-2">
+				<Button onclick={restart} disabled={posting}>Study again</Button>
+				<Button variant="outline" onclick={() => goto('/dashboard')} disabled={posting}>View dashboard</Button>
 			</div>
-			{#if posting}<p class="small muted" style="margin-top: 10px">Recording session…</p>{/if}
 		</div>
 	{:else}
-		<div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px">
-			<p class="eyebrow">{data.deck.emoji} {data.deck.title} · {data.user.name}</p>
-			<p class="mono" style="color: var(--slate)">Card {answered + 1} of {totalInPass}{repass ? ' (re-test)' : ''}</p>
+		<div class="flex items-center justify-between">
+			<p class="text-sm font-medium text-primary">{data.deck.emoji} {data.deck.title}</p>
+			<p class="text-sm text-muted-foreground">
+				Card {answered + 1} / {totalInPass}{repass ? ' · re-test' : ''}
+			</p>
 		</div>
-		<div class="bar" style="margin-bottom: 18px"><i style="width: {Math.min(100, (answered / Math.max(totalInPass, 1)) * 100)}%"></i></div>
+		<div class="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+			<div class="h-full rounded-full bg-primary transition-all" style={`width: ${Math.min(100, (answered / Math.max(totalInPass, 1)) * 100)}%`} />
+		</div>
 
 		{#key current.id}
-			<Flashcard card={current} bind:flipped />
+			<Flashcard card={current} {deck} bind:flipped />
 		{/key}
 
 		{#if rated}
-			<div style="margin-top: 18px">
+			<div class="space-y-4">
 				<FeedbackPanel items={feedbacks} />
-				<button class="btn btn-dark btn-block" style="margin-top: 14px" onclick={next}>Next card</button>
+				<Button class="w-full" size="lg" onclick={next}>Next card</Button>
 			</div>
 		{:else}
-			<div class="rate-row" style="margin-top: 18px">
-				<button class="rate-btn again" disabled={!flipped} onclick={() => rate('again')}>1 · Again</button>
-				<button class="rate-btn hard" disabled={!flipped} onclick={() => rate('hard')}>2 · Hard</button>
-				<button class="rate-btn good" disabled={!flipped} onclick={() => rate('good')}>3 · Good</button>
-				<button class="rate-btn easy" disabled={!flipped} onclick={() => rate('easy')}>4 · Easy</button>
+			<div class="grid grid-cols-4 gap-2">
+				<Button variant="destructive" class="h-14" disabled={!flipped} onclick={() => rate('again')}>Again</Button>
+				<Button variant="secondary" class="h-14" disabled={!flipped} onclick={() => rate('hard')}>Hard</Button>
+				<Button variant="default" class="h-14" disabled={!flipped} onclick={() => rate('good')}>Good</Button>
+				<Button variant="outline" class="h-14" disabled={!flipped} onclick={() => rate('easy')}>Easy</Button>
 			</div>
-			<p class="small muted" style="margin-top: 10px; text-align: center">
-				Click the card or press space to flip · rate with 1–4
-			</p>
+			<p class="text-center text-xs text-muted-foreground">Space to flip · 1–4 to rate</p>
 		{/if}
 	{/if}
 </div>

@@ -1,115 +1,205 @@
 <script>
-	import DeckCard from '$lib/components/DeckCard.svelte';
-	import Leaderboard from '$lib/components/Leaderboard.svelte';
-	import NemesisDossier from '$lib/components/NemesisDossier.svelte';
+	import { goto } from '$app/navigation';
+	import { toast } from 'svelte-sonner';
 	import Stat from '$lib/components/Stat.svelte';
+	import { Button } from '$lib/components/ui/button';
+	import { Card } from '$lib/components/ui/card';
 
 	let { data } = $props();
+
+	const questions = data.quiz.questions;
+	const letters = ['A', 'B', 'C', 'D'];
+
+	let idx = $state(0);
+	let results = $state([]);
+	let done = $state(false);
+	let posting = $state(false);
+	let reveal = $state(false);
+	let wrongPick = $state(null);
+	let advancing = $state(false);
+	let dx = $state(0);
+	let dragging = $state(false);
+	let startX = 0;
+	let startY = 0;
+	const startedAt = Date.now();
+
+	const current = $derived(questions[idx]);
+	const correctCount = $derived(results.filter((r) => r.correct).length);
+	const progressPct = $derived((results.length / questions.length) * 100);
+
+	let advanceTimer;
+
+	function notify(correct, optionText) {
+		if (correct) {
+			toast.success('Correct!', { description: 'Nice recall. Next.' });
+		} else {
+			toast.error('Not quite', { description: `The answer was: ${optionText}` });
+		}
+	}
+
+	function answerByOption(i) {
+		if (advancing || done) return;
+		const q = current;
+		const correct = i === q.correctIndex;
+		results.push({ questionId: q.id, chosen: i, correct, ms: Date.now() - startedAt });
+		if (!correct) wrongPick = i;
+		reveal = true;
+		notify(correct, q.options[q.correctIndex]);
+		advance(correct ? 450 : 1600);
+	}
+
+	/** Swipe: right = knew it, left = missed it. */
+	function answerBySwipe(knew) {
+		if (advancing || done) return;
+		const q = current;
+		const correct = knew;
+		results.push({ questionId: q.id, chosen: null, correct, ms: Date.now() - startedAt });
+		if (!correct) wrongPick = null;
+		reveal = true;
+		notify(correct, q.options[q.correctIndex]);
+		advance(correct ? 450 : 1600);
+	}
+
+	function advance(delay) {
+		advancing = true;
+		advanceTimer = setTimeout(() => {
+			advancing = false;
+			reveal = false;
+			wrongPick = null;
+			if (idx + 1 < questions.length) {
+				idx++;
+			} else {
+				finish();
+			}
+		}, delay);
+	}
+
+	async function finish() {
+		done = true;
+		posting = true;
+		try {
+			await fetch('/api/quiz', {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({
+					quizId: data.quiz.id,
+					startedAt,
+					endedAt: Date.now(),
+					results: results.map((r) => ({ questionId: r.questionId, correct: r.correct, ms: r.ms }))
+				})
+			});
+		} catch {
+			// Best-effort
+		}
+		posting = false;
+	}
+
+	function restart() {
+		idx = 0;
+		results = [];
+		done = false;
+		reveal = false;
+		wrongPick = null;
+		advancing = false;
+		dx = 0;
+	}
+
+	function onPointerDown(e) {
+		dragging = true;
+		startX = e.clientX;
+		startY = e.clientY;
+		dx = 0;
+	}
+
+	function onPointerMove(e) {
+		if (!dragging) return;
+		dx = e.clientX - startX;
+	}
+
+	function onPointerUp() {
+		if (!dragging) return;
+		dragging = false;
+		const d = dx;
+		dx = 0;
+		if (d > 90) answerBySwipe(true);
+		else if (d < -90) answerBySwipe(false);
+	}
+
+	function optionClass(i) {
+		if (!reveal) return 'border-input bg-background hover:bg-muted';
+		if (i === current.correctIndex) return 'border-green-500 bg-green-50 text-green-800';
+		if (i === wrongPick) return 'border-red-500 bg-red-50 text-red-800';
+		return 'border-input bg-background opacity-50';
+	}
 </script>
 
-<section class="hero">
-	<div class="wrap">
-		<div class="hero-grid">
-			<div>
-				<p class="eyebrow">Smaran · स्मरण — memory that compounds</p>
-				<h1>
-					Remember more of<br />
-					what you <span class="accent">read</span>.
-				</h1>
-				<p class="lede">
-					UPSC flashcards with spaced repetition that schedules reviews exactly when memory
-					needs them — plus a scoreboard of your peers, a rival who remembers every card you
-					missed, and feedback after every answer.
-				</p>
-				<div class="hero-cta">
-					<a class="btn btn-primary" href="/decks">Start studying</a>
-					<a class="btn btn-ghost" href="/leaderboard">See the board</a>
-				</div>
-				{#if data.user && data.nemesis}
-					<p class="small muted" style="margin-top:18px">
-						Your rival is {data.nemesis.avatar} {data.nemesis.name} at {Math.round(data.nemesis.accuracy * 100)}%.
-						Beat them deck by deck.
-					</p>
-				{/if}
-			</div>
-			<div class="hero-stats">
-				<Stat label="Cards" value={data.totalCards} tone="saffron-deep" />
-				<Stat label="Decks" value={data.decks.length} sub="Polity · History · Geography · Culture · Economy" />
-				<Stat label="Students on the board" value={data.peerCount} />
-				{#if data.summary}
-					<Stat label="Your accuracy" value={`${Math.round((data.summary.correct / Math.max(data.summary.total, 1)) * 100)}%`} sub={`${data.summary.total} reviews · 🔥 ${data.summary.streak} streak`} />
-				{/if}
-			</div>
+<div class="mx-auto max-w-xl space-y-6 pt-6">
+	<!-- Quick quiz header -->
+	<div class="flex items-center justify-between">
+		<div>
+			<p class="text-sm font-medium text-primary">Quick Quiz</p>
+			<p class="text-sm text-muted-foreground">{data.quiz.title} · {questions.length} questions</p>
+		</div>
+		<div class="text-right">
+			<p class="text-2xl font-bold">{correctCount}<span class="text-base font-normal text-muted-foreground">/{results.length}</span></p>
+			<p class="text-xs text-muted-foreground">correct</p>
 		</div>
 	</div>
-</section>
+	<div class="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+		<div class="h-full rounded-full bg-primary transition-all duration-300" style={`width: ${progressPct}%`} />
+	</div>
 
-<div class="wrap">
-	<section class="section">
-		<div class="section-head">
-			<h2>Choose your battlefield</h2>
-			<a class="small" href="/decks">All decks →</a>
+	{#if done}
+		<div class="space-y-4 pt-4 text-center">
+			<h1 class="text-4xl font-bold tracking-tight">{Math.round((correctCount / questions.length) * 100)}%</h1>
+			<p class="text-muted-foreground">{correctCount} of {questions.length} correct</p>
+			<div class="grid grid-cols-2 gap-3">
+				<Stat label="Correct" value={correctCount} />
+				<Stat label="Missed" value={questions.length - correctCount} />
+			</div>
+			<div class="flex flex-wrap justify-center gap-3 pt-2">
+				<Button onclick={restart}>Retake</Button>
+				<Button variant="outline" onclick={() => goto('/quiz')}>All quizzes</Button>
+				<Button variant="ghost" onclick={() => goto('/dashboard')}>Dashboard</Button>
+			</div>
 		</div>
-		<div class="deck-grid">
-			{#each data.decks.slice(0, 4) as deck (deck.id)}
-				<DeckCard {deck} />
+	{:else}
+		<p class="text-center text-xs text-muted-foreground">
+			Swipe right if you know it · left if you don't · or tap an answer
+		</p>
+
+		<!-- Question card (swipeable) -->
+		<Card
+			class="touch-none select-none p-6 transition-transform duration-100"
+			style={dragging ? `transform: translateX(${dx}px) rotate(${dx / 24}deg)` : 'transition-duration: 200ms'}
+			onpointerdown={onPointerDown}
+			onpointermove={onPointerMove}
+			onpointerup={onPointerUp}
+			onpointerleave={onPointerUp}
+			onpointercancel={onPointerUp}
+		>
+			<div class="mb-3 flex items-center justify-between text-xs text-muted-foreground">
+				<span>{idx + 1} / {questions.length}</span>
+				<span class="rounded bg-muted px-2 py-0.5">{data.quiz.emoji}</span>
+			</div>
+			<h2 class="text-xl font-semibold leading-relaxed">{current.question}</h2>
+			{#if reveal && wrongPick === null}
+				<p class="mt-4 text-sm text-green-700">✓ {current.options[current.correctIndex]}</p>
+			{/if}
+		</Card>
+
+		<!-- Answer options -->
+		<div class="grid grid-cols-1 gap-2">
+			{#each current.options as option, i (i)}
+				<button
+					onclick={() => answerByOption(i)}
+					disabled={advancing || reveal}
+					class={`flex items-center gap-3 rounded-xl border-2 px-4 py-3.5 text-left text-sm font-medium transition-colors ${optionClass(i)} ${reveal && i === current.correctIndex ? 'animate-pulse' : ''}`}
+				>
+					<span class="font-mono text-xs opacity-60">{letters[i]}</span>
+					<span>{option}</span>
+				</button>
 			{/each}
 		</div>
-	</section>
-
-	<section class="section">
-		<div class="section-head">
-			<h2>How Smaran works</h2>
-		</div>
-		<div class="kbd-grid">
-			<div class="step">
-				<span class="num">1</span>
-				<div>
-					<h3>Study</h3>
-					<p class="small muted">
-						Flip flashcards and rate each answer — again, hard, good, easy. Missed cards come
-						back before the session ends.
-					</p>
-				</div>
-			</div>
-			<div class="step">
-				<span class="num">2</span>
-				<div>
-					<h3>Get told the truth</h3>
-					<p class="small muted">
-						After every answer: how your memory is doing, what your peers scored on the same
-						card, and whether your rival beat you to it.
-					</p>
-				</div>
-			</div>
-			<div class="step">
-				<span class="num">3</span>
-				<div>
-					<h3>Out-study your rival</h3>
-					<p class="small muted">
-						The scheduler plans your next review for the moment memory would fade. The
-						leaderboard and nemesis dossier keep score.
-					</p>
-				</div>
-			</div>
-		</div>
-	</section>
-
-	{#if data.user && data.nemesis}
-		<section class="section">
-			<div class="section-head">
-				<h2>Your rivalry</h2>
-				<a class="small" href="/nemesis">Full dossier →</a>
-			</div>
-			<NemesisDossier nemesis={data.nemesis} record={{ win: 0, loss: 0, draw: 0 }} taunt="Start a session to open the ledger." compact />
-		</section>
 	{/if}
-
-	<section class="section">
-		<div class="section-head">
-			<h2>Leaderboard</h2>
-			<a class="small" href="/leaderboard">Full board →</a>
-		</div>
-		<Leaderboard entries={data.leaderboard} highlight={data.userId} />
-	</section>
 </div>

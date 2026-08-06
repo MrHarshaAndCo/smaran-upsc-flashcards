@@ -1,35 +1,31 @@
 <script>
-	import { Button } from '$lib/components/ui/button/index.js';
+	import { Button } from '$lib/components/ui/button';
+	import { Card } from '$lib/components/ui/card';
 
 	let { data } = $props();
 </script>
 
-<div class="wrap" style="padding-top: 40px">
-	<p class="eyebrow">Quiz hall</p>
-	<h1 style="margin-bottom: 6px">Quizzes</h1>
-	<p class="muted" style="max-width: 56ch">
-		Timed MCQ sprints. Every answer is scored against the room and your rival, so you always
-		know where you stand.
-	</p>
-
-	<div class="deck-grid section" style="margin-top: 28px">
+<div class="space-y-8 pt-8">
+	<div>
+		<h1 class="text-3xl font-bold tracking-tight">Quizzes</h1>
+		<p class="mt-1 text-muted-foreground">
+			Timed MCQ sprints. Every answer is scored against the room and your rival.
+		</p>
+	</div>
+	<div class="grid gap-4 sm:grid-cols-2">
 		{#each data.quizzes as quiz (quiz.id)}
-			<div class="deck-tile" style="--deck-color: {quiz.color}">
-				<div class="emoji">{quiz.emoji}</div>
-				<div>
-					<h3>{quiz.title}</h3>
-					<div class="sub">{quiz.description}</div>
-				</div>
-				<div class="meta">
+			<Card class="flex flex-col p-5">
+				<div class="mb-2 text-2xl">{quiz.emoji}</div>
+				<h2 class="font-semibold">{quiz.title}</h2>
+				<p class="mt-1 text-sm text-muted-foreground">{quiz.description}</p>
+				<div class="mt-3 flex items-center justify-between text-xs text-muted-foreground">
 					<span>{quiz.questions.length} questions</span>
 					<span>{quiz.minutes} min</span>
 				</div>
-				<div style="margin-top: 4px">
-					<a href={`/quiz/${quiz.id}`}>
-						<Button variant="outline" size="sm" class="w-full">Start quiz</Button>
-					</a>
-				</div>
-			</div>
+				<a href={`/quiz/${quiz.id}`} class="mt-4">
+					<Button variant="outline" class="w-full">Start quiz</Button>
+				</a>
+			</Card>
 		{/each}
 	</div>
 </div>

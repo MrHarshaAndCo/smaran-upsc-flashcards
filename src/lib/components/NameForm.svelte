@@ -1,5 +1,7 @@
 <script>
 	import { invalidateAll } from '$app/navigation';
+	import { Button } from '$lib/components/ui/button';
+	import { Input } from '$lib/components/ui/input';
 
 	let { compact = false, ondone = () => {} } = $props();
 	let name = $state('');
@@ -27,18 +29,10 @@
 	}
 </script>
 
-<form class="name-form" onsubmit={submit}>
-	<input
-		class="input"
-		class:small={!compact}
-		placeholder="Your name"
-		aria-label="Your name"
-		bind:value={name}
-		maxlength="24"
-		autocomplete="name"
-	/>
-	<button class="btn {compact ? 'btn-dark' : 'btn-primary'}" type="submit" disabled={busy || !name.trim()}>
-		{busy ? '…' : compact ? 'Join' : 'Start studying'}
-	</button>
+<form onsubmit={submit} class="flex gap-2">
+	<Input placeholder="Your name" bind:value={name} maxlength="24" autocomplete="name" aria-label="Your name" class={compact ? 'h-8' : ''} />
+	<Button type="submit" size={compact ? 'sm' : 'default'} disabled={busy || !name.trim()}>
+		{busy ? '…' : compact ? 'Join' : 'Start'}
+	</Button>
 </form>
-{#if error}<p class="small muted" style="margin:8px 0 0">{error}</p>{/if}
+{#if error}<p class="mt-1 text-xs text-destructive">{error}</p>{/if}
