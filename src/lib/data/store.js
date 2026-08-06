@@ -90,6 +90,11 @@ class MockStore {
 		this.quizAnswers = [];
 		this.quizSeq = 0;
 		this.sessionSeq = 0;
+		/** @type {Map<string, { id: string, name: string, emoji: string, description: string|null, createdBy: string, createdAt: number }>} */
+		this.groups = new Map();
+		/** @type {Map<string, Map<string, number>>} groupId → userId → joinedAt */
+		this.groupMembers = new Map();
+		this.groupSeq = 0;
 	}
 
 	async saveQuizSession({ userId, quizId, startedAt, endedAt, results }) {
@@ -149,6 +154,104 @@ class MockStore {
 			.filter((d) => d.userId === userId)
 			.sort((a, b) => b.createdAt - a.createdAt)
 			.map((d) => ({ deviceId: d.deviceId, platform: d.platform, createdAt: d.createdAt, lastSeen: d.lastSeen }));
+	}
+
+	async listGroups({ query = null, userId = null } = {}) {
+		let groups = [...this.groups.values()];
+		if (query) {
+			const q = query.toLowerCase();
+			groups = groups.filter((g) => g.name.toLowerCase().includes(q));
+		}
+		return groups
+			.sort((a, b) => b.createdAt - a.createdAt)
+			.map((g) => ({
+				id: g.id,
+				name: g.name,
+				emoji: g.emoji,
+				description: g.description,
+				createdBy: g.createdBy,
+				createdAt: g.createdAt,
+				memberCount: this.groupMembers.get(g.id)?.size ?? 0,
+				isMember: userId ? (this.groupMembers.get(g.id)?.has(userId) ?? false) : false
+			}));
+	}
+
+	async createGroup({ name, emoji = '👥', description = null, userId }) {
+		this.groupSeq++;
+		const id = `g-${this.groupSeq}`;
+		this.groups.set(id, { id, name, emoji, description, createdBy: userId, createdAt: Date.now() });
+		const members = new Map();
+		members.set(userId, Date.now());
+		this.groupMembers.set(id, members);
+		return { id };
+	}
+
+	async joinGroup(groupId, userId) {
+		const members = this.groupMembers.get(groupId);
+		if (!members) return false;
+		if (members.has(userId)) return false;
+		members.set(userId, Date.now());
+		return true;
+	}
+
+	async leaveGroup(groupId, userId) {
+		this.groupMembers.get(groupId)?.delete(userId);
+	}
+
+	async getUserGroups(userId) {
+		const out = [];
+		for (const [groupId, members] of this.groupMembers) {
+			if (!members.has(userId)) continue;
+			const g = this.groups.get(groupId);
+			if (!g) continue;
+			out.push({
+				id: g.id,
+				name: g.name,
+				emoji: g.emoji,
+				description: g.description,
+				createdAt: g.createdAt,
+				memberCount: members.size
+			});
+		}
+		return out.sort((a, b) => b.createdAt - a.createdAt);
+	}
+
+	async getGroup(groupId) {
+		const g = this.groups.get(groupId) ?? null;
+		if (!g) return null;
+		const members = [];
+		for (const [memberId, joinedAt] of this.groupMembers.get(groupId) ?? []) {
+			const u = this.users.get(memberId);
+			if (!u) continue;
+			const list = this.reviewsByUser.get(memberId) ?? [];
+			let correct = 0;
+			for (const r of list) if (r.rating !== 'again') correct++;
+			members.push({
+				userId: u.id,
+				name: u.name,
+				avatar: u.avatar,
+				joinedAt,
+				reviews: list.length,
+				accuracy: list.length === 0 ? 0 : correct / list.length
+			});
+		}
+		return {
+			id: g.id,
+			name: g.name,
+			emoji: g.emoji,
+			description: g.description,
+			createdBy: g.createdBy,
+			createdAt: g.createdAt,
+			members: members.sort((a, b) => b.accuracy - a.accuracy)
+		};
+	}
+
+	async searchUsers(query, { limit = 10 } = {}) {
+		const q = query.toLowerCase();
+		return [...this.users.values()]
+			.filter((u) => u.name.toLowerCase().includes(q))
+			.slice(0, Math.min(Math.max(limit, 1), 25))
+			.map((u) => ({ id: u.id, name: u.name, avatar: u.avatar }));
 	}
 
 	// ---- decks & cards -------------------------------------------------
@@ -598,6 +701,17 @@ const SCHEMA_STATEMENTS = [
   outcome text not null, roast text, created_at bigint not null
 )`,
 'CREATE INDEX IF NOT EXISTS idx_nemesis_history_users ON nemesis_history (user_id, nemesis_user_id, created_at DESC)',
+`CREATE TABLE IF NOT EXISTS groups (
+  id text primary key, name text not null, emoji text not null default '👥',
+  description text, created_by text not null, created_at bigint not null
+)`,
+`CREATE TABLE IF NOT EXISTS group_members (
+  group_id text not null references groups(id) on delete cascade,
+  user_id text not null, joined_at bigint not null,
+  primary key (group_id, user_id)
+)`,
+'CREATE INDEX IF NOT EXISTS idx_groups_name ON groups (lower(name))',
+'CREATE INDEX IF NOT EXISTS idx_group_members_user ON group_members (user_id)',
 ];
 
 class NeonStore {
@@ -955,6 +1069,98 @@ class NeonStore {
 		);
 	}
 
+	async listGroups({ query = null, userId = null } = {}) {
+		const params = [];
+		let where = '';
+		if (query) {
+			params.push(`%${query}%`);
+			where = 'WHERE lower(g.name) LIKE lower($1)';
+		}
+		const rows = await this.sql(
+			`SELECT g.id, g.name, g.emoji, g.description, g.created_by AS "createdBy",
+			        g.created_at AS "createdAt", count(m.user_id)::int AS "memberCount"
+			 FROM groups g LEFT JOIN group_members m ON m.group_id = g.id
+			 ${where}
+			 GROUP BY g.id ORDER BY g.created_at DESC`,
+			params
+		);
+		if (!userId) return rows;
+		const mine = new Set(
+			(await this.sql('SELECT group_id FROM group_members WHERE user_id = $1', [userId])).map((r) => r.group_id)
+		);
+		return rows.map((r) => ({ ...r, isMember: mine.has(r.id) }));
+	}
+
+	async createGroup({ name, emoji = '👥', description = null, userId }) {
+		const id = `g-${crypto.randomUUID()}`;
+		await this.sql(
+			'INSERT INTO groups (id, name, emoji, description, created_by, created_at) VALUES ($1,$2,$3,$4,$5,$6)',
+			[id, name, emoji, description, userId, Date.now()]
+		);
+		await this.sql(
+			'INSERT INTO group_members (group_id, user_id, joined_at) VALUES ($1,$2,$3)',
+			[id, userId, Date.now()]
+		);
+		return { id };
+	}
+
+	async joinGroup(groupId, userId) {
+		const rows = await this.sql(
+			'INSERT INTO group_members (group_id, user_id, joined_at) VALUES ($1,$2,$3) ON CONFLICT DO NOTHING RETURNING user_id',
+			[groupId, userId, Date.now()]
+		);
+		return rows.length > 0;
+	}
+
+	async leaveGroup(groupId, userId) {
+		await this.sql('DELETE FROM group_members WHERE group_id = $1 AND user_id = $2', [groupId, userId]);
+	}
+
+	async getUserGroups(userId) {
+		return this.sql(
+			`SELECT g.id, g.name, g.emoji, g.description, g.created_at AS "createdAt",
+			        count(m.user_id)::int AS "memberCount"
+			 FROM group_members gm JOIN groups g ON g.id = gm.group_id
+			 LEFT JOIN group_members m ON m.group_id = g.id
+			 WHERE gm.user_id = $1 GROUP BY g.id ORDER BY g.created_at DESC`,
+			[userId]
+		);
+	}
+
+	async getGroup(groupId) {
+		const g = (
+			await this.sql(
+				'SELECT id, name, emoji, description, created_by AS "createdBy", created_at AS "createdAt" FROM groups WHERE id = $1',
+				[groupId]
+			)
+		)[0] ?? null;
+		if (!g) return null;
+		const members = await this.sql(
+			`SELECT u.id AS "userId", u.name, u.avatar, gm.joined_at AS "joinedAt",
+			        count(r.id)::int AS reviews,
+			        count(r.id) FILTER (WHERE r.rating <> 'again')::int AS correct
+			 FROM group_members gm
+			 JOIN users u ON u.id = gm.user_id
+			 LEFT JOIN reviews r ON r.user_id = gm.user_id
+			 WHERE gm.group_id = $1 GROUP BY u.id, gm.joined_at ORDER BY u.name`,
+			[groupId]
+		);
+		return {
+			...g,
+			members: members.map((m) => ({
+				...m,
+				accuracy: m.reviews === 0 ? 0 : m.correct / m.reviews
+			}))
+		};
+	}
+
+	async searchUsers(query, { limit = 10 } = {}) {
+		return this.sql(
+			'SELECT id, name, avatar FROM users WHERE lower(name) LIKE lower($1) ORDER BY created_at DESC LIMIT $2',
+			[`%${query}%`, Math.min(Math.max(limit, 1), 25)]
+		);
+	}
+
 	async saveQuizSession({ userId, quizId, startedAt, endedAt, results }) {
 		const correct = results.filter((r) => r.correct).length;
 		const rows = await this.sql(
@@ -1166,6 +1372,13 @@ export function _resetStore() {
  * @property {() => Promise<Array<{ subject: string, count: number, subTopics: Array<{ name: string, count: number }> }>>} getQuestionFilters
  * @property {(args?: { subject?: string|null, subTopic?: string|null, limit?: number }) => Promise<Array<{ id: string, subject: string, subTopic: string|null, question: string, options: string[], answerIndex: number, explanation: string|null }>>} getQuestions
  * @property {() => Promise<User[]>} listUsers
+ * @property {(args?: { query?: string|null, userId?: string|null }) => Promise<Array<{ id: string, name: string, emoji: string, description: string|null, createdBy: string, createdAt: number, memberCount: number, isMember?: boolean }>>} listGroups
+ * @property {(args: { name: string, emoji?: string, description?: string|null, userId: string }) => Promise<{ id: string }>} createGroup
+ * @property {(groupId: string, userId: string) => Promise<boolean>} joinGroup
+ * @property {(groupId: string, userId: string) => Promise<void>} leaveGroup
+ * @property {(userId: string) => Promise<Array<{ id: string, name: string, emoji: string, description: string|null, createdAt: number, memberCount: number }>>} getUserGroups
+ * @property {(groupId: string) => Promise<{ id: string, name: string, emoji: string, description: string|null, createdBy: string, createdAt: number, members: Array<{ userId: string, name: string, avatar: string, joinedAt: number, reviews: number, accuracy: number }> }|null>} getGroup
+ * @property {(query: string, args?: { limit?: number }) => Promise<Array<{ id: string, name: string, avatar: string }>>} searchUsers
  * @property {(userId: string) => Promise<Map<string, CardState>>} getCardStates
  * @property {(userId: string, cardId: string) => Promise<CardState|null>} getCardState
  * @property {(args: { userId: string, cardId: string, deckId: string, rating: 'again'|'hard'|'good'|'easy', ms?: number, at?: number }) => Promise<{ state: CardState, correct: boolean }>} saveReview

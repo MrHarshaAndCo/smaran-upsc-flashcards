@@ -1,15 +1,17 @@
 <script>
+	import { page } from '$app/state';
 	import Leaderboard from '$lib/components/Leaderboard.svelte';
 	import Stat from '$lib/components/Stat.svelte';
 
 	let { data } = $props();
 	let selected = $state('global');
 
+	const me = $derived(page.data.user ?? null);
 	const entries = $derived(selected === 'global' ? data.global : data.perDeck[selected] ?? []);
 	const deck = $derived(selected === 'global' ? null : data.decks.find((d) => d.id === selected));
 
-	const myEntry = $derived(entries.find((e) => e.userId === data.user.id) ?? null);
-	const myRank = $derived(entries.findIndex((e) => e.userId === data.user.id) + 1);
+	const myEntry = $derived(entries.find((e) => e.userId === me?.id) ?? null);
+	const myRank = $derived(entries.findIndex((e) => e.userId === me?.id) + 1);
 	const top = $derived(entries[0] ?? null);
 </script>
 
@@ -23,6 +25,31 @@
 		</p>
 	</header>
 
+	<!-- Stat board -->
+	<div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+		<Stat label="Active students" value={data.stats.activeStudents} sub="reviewed at least once" />
+		<Stat label="Reviews logged" value={data.stats.totalReviews} sub="across all decks" />
+		<Stat
+			label="Top accuracy"
+			value={data.stats.topAccuracy == null ? '—' : `${Math.round(data.stats.topAccuracy * 100)}%`}
+			sub={data.stats.topName ?? 'No one yet'}
+		/>
+		<Stat label="Decks" value={data.decks.length} sub="flashcard sets" />
+	</div>
+
+	{#if data.stats.podium.length > 0}
+		<div class="grid grid-cols-3 gap-2">
+			{#each data.stats.podium as e, i (e.userId)}
+				<div class="flex flex-col items-center gap-1 rounded-xl border border-border bg-card px-2 py-3 text-center">
+					<span class="font-mono text-xs {i === 0 ? 'text-amber-600' : i === 1 ? 'text-slate-400' : 'text-amber-800'}">#{i + 1}</span>
+					<span class="text-xl">{e.avatar}</span>
+					<span class="w-full truncate text-xs font-medium">{e.name}</span>
+					<span class="font-mono text-xs text-muted-foreground">{Math.round(e.accuracy * 100)}%</span>
+				</div>
+			{/each}
+		</div>
+	{/if}
+
 	<div class="flex gap-2 overflow-x-auto pb-1">
 		<button onclick={() => (selected = 'global')} class="shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium transition-colors {selected === 'global' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-input hover:bg-muted'}">
 			Global
@@ -34,15 +61,15 @@
 		{/each}
 	</div>
 
-	{#if data.user && myEntry}
+	{#if me && myEntry}
 		<div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
 			<Stat label="Your rank" value={myRank > 0 ? `#${myRank}` : '—'} sub={deck ? deck.title : 'global'} />
 			<Stat label="Your accuracy" value={`${Math.round(myEntry.accuracy * 100)}%`} sub={`${myEntry.reviews} reviews`} />
-			{#if top && top.userId !== data.user.id}
+			{#if top && top.userId !== me.id}
 				<Stat label="Gap to first" value={`${Math.round((top.accuracy - myEntry.accuracy) * 100)}%`} sub={`${top.name} leads`} tone={top.accuracy - myEntry.accuracy < 0.05 ? 'green-600' : ''} />
 			{/if}
 		</div>
 	{/if}
 
-	<Leaderboard entries={entries} deckTitle={deck?.title} highlight={data.user?.id} />
+	<Leaderboard entries={entries} deckTitle={deck?.title} highlight={me?.id} />
 </div>

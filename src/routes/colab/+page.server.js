@@ -9,13 +9,19 @@ export async function load({ cookies, url }) {
 	const userId = cookies.get('smaran_u') ?? null;
 
 	// Batch 1 — everything independent, in parallel.
-	const [leaderboard, summary, nemesis, devices] = await Promise.all([
+	const [leaderboard, summary, nemesis, devices, myGroups, groups, users] = await Promise.all([
 		store.leaderboardEntries(),
 		store.getUserSummary(userId),
 		userId ? store.findNemesis(userId) : null,
-		store.listDevices(userId)
+		store.listDevices(userId),
+		store.getUserGroups(userId),
+		store.listGroups({ userId }),
+		userId ? store.listUsers() : []
 	]);
 	const myRank = leaderboard.findIndex((e) => e.userId === userId) + 1;
+
+	// Member leaderboards for groups the user belongs to (small set).
+	const myGroupDetails = await Promise.all(myGroups.map((g) => store.getGroup(g.id)));
 
 	// Room average per deck (for the you-vs-room bars).
 	const perDeck = summary.perDeck;
@@ -69,6 +75,8 @@ export async function load({ cookies, url }) {
 	const top = leaderboard[0] ?? null;
 	const me = leaderboard[myRank - 1] ?? null;
 
+	const userAccuracy = new Map(leaderboard.map((e) => [e.userId, e]));
+
 	return {
 		leaderboard,
 		myRank: myRank > 0 ? myRank : leaderboard.length + 1,
@@ -83,6 +91,18 @@ export async function load({ cookies, url }) {
 		target,
 		h2h,
 		duels: duels.slice(0, 10),
+		groups,
+		myGroupDetails,
+		users: users.map((u) => {
+			const e = userAccuracy.get(u.id);
+			return {
+				id: u.id,
+				name: u.name,
+				avatar: u.avatar,
+				accuracy: e?.accuracy ?? null,
+				reviews: e?.reviews ?? 0
+			};
+		}),
 		userId
 	};
 }
