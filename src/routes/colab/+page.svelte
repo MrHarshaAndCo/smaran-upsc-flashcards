@@ -1,6 +1,6 @@
 <script>
 	import { goto } from '$app/navigation';
-	import { Users, Target, Trophy, Swords } from 'lucide-svelte';
+	import { Target, Swords } from 'lucide-svelte';
 	import DuelRow from '$lib/components/DuelRow.svelte';
 	import H2HLedger from '$lib/components/H2HLedger.svelte';
 	import SectionHeader from '$lib/components/SectionHeader.svelte';
@@ -33,16 +33,14 @@
 
 <div class="space-y-8 pt-6">
 	<!-- Header -->
-	<div>
-		<div class="flex items-center gap-2">
-			<Users class="size-5 text-primary" />
-			<h1 class="font-display text-3xl font-semibold tracking-tight">Colab</h1>
-		</div>
-		<p class="mt-1 max-w-xl text-muted-foreground">
+	<header class="border-b border-border pb-5">
+		<p class="eyebrow text-primary">Classroom</p>
+		<h1 class="font-display mt-1.5 text-3xl font-semibold tracking-tight">Colab</h1>
+		<p class="mt-1 max-w-xl text-sm text-muted-foreground">
 			How you stack up against the whole room — and anyone in it. Pick a student, see the
 			head-to-head, and decide who to catch.
 		</p>
-	</div>
+	</header>
 
 	<!-- Position stats -->
 	<div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -68,8 +66,8 @@
 					<div class="flex items-center justify-between text-sm">
 						<span class="font-medium">{d.emoji} {d.title}</span>
 						<span class="text-xs text-muted-foreground">
-							<span class="font-semibold text-foreground">{Math.round(myRate(d) * 100)}%</span> vs room
-							<span class="font-semibold text-foreground"> {data.room[d.deckId] == null ? '—' : `${Math.round(data.room[d.deckId] * 100)}%`}</span>
+							<span class="font-mono font-semibold text-foreground">{Math.round(myRate(d) * 100)}%</span> vs room
+							<span class="font-mono font-semibold text-foreground"> {data.room[d.deckId] == null ? '—' : `${Math.round(data.room[d.deckId] * 100)}%`}</span>
 						</span>
 					</div>
 					<div class="mt-2 space-y-1">

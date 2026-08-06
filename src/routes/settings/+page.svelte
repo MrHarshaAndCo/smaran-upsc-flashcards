@@ -69,16 +69,16 @@
 	}
 </script>
 
-<div class="mx-auto max-w-lg space-y-8 pt-8">
-	<div>
-		<a href="/" class="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ChevronLeft class="size-4" /> Back</a>
-		<h1 class="mt-2 font-display text-3xl font-semibold tracking-tight">Settings</h1>
-		<p class="mt-1 text-muted-foreground">Your account details and security.</p>
-	</div>
+<div class="mx-auto max-w-lg space-y-8 pt-6">
+	<header class="border-b border-border pb-5">
+		<p class="eyebrow text-primary">Account</p>
+		<h1 class="font-display mt-1.5 text-3xl font-semibold tracking-tight">Settings</h1>
+		<p class="mt-1 text-sm text-muted-foreground">Your account details and security.</p>
+	</header>
 
 	<Card>
 		<CardHeader>
-			<CardTitle class="flex items-center gap-2"><UserIcon class="size-4 text-primary" /> Profile</CardTitle>
+			<CardTitle class="font-display flex items-center gap-2 text-xl font-semibold tracking-tight"><UserIcon class="size-4 text-primary" /> Profile</CardTitle>
 			<CardDescription>Your display name and the email on this account.</CardDescription>
 		</CardHeader>
 		<CardContent class="space-y-4">
@@ -101,7 +101,7 @@
 
 	<Card>
 		<CardHeader>
-			<CardTitle class="flex items-center gap-2"><KeyRound class="size-4 text-primary" /> Change password</CardTitle>
+			<CardTitle class="font-display flex items-center gap-2 text-xl font-semibold tracking-tight"><KeyRound class="size-4 text-primary" /> Change password</CardTitle>
 			<CardDescription>Set a new password for this account.</CardDescription>
 		</CardHeader>
 		<CardContent>

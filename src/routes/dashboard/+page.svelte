@@ -60,14 +60,19 @@
 		const d = new Date(ts);
 		return `${d.getDate()} ${MONTHS[d.getMonth()]}`;
 	};
+	const quizLabel = (id) => {
+		if (id === 'quick' || id.startsWith('quick')) return { title: 'Quick Quiz', emoji: '⚡' };
+		if (id.startsWith('practice:')) return { title: id.slice('practice:'.length), emoji: '📘' };
+		return null;
+	};
 </script>
 
 <div class="space-y-8 pt-6">
 	<!-- Header -->
 	<div class="flex flex-wrap items-end justify-between gap-2">
 		<div>
-			<p class="text-sm font-medium text-primary">Student dashboard</p>
-			<h1 class="font-display text-3xl font-semibold tracking-tight">Welcome back, {data.user.name}</h1>
+			<p class="eyebrow text-primary">Student dashboard</p>
+			<h1 class="font-display mt-1.5 text-3xl font-semibold tracking-tight">Welcome back, {data.user.name}</h1>
 		</div>
 		{#if data.rank > 0}
 			<div class="flex items-center gap-1.5 rounded-full border bg-background px-3 py-1.5 text-sm">
@@ -162,7 +167,7 @@
 				emptyLabel="Take one"
 			>
 				{#snippet children(q)}
-					<span class="text-sm font-medium">{data.quizTitles[q.quizId]?.emoji ?? '📝'} {data.quizTitles[q.quizId]?.title ?? q.quizId}</span>
+					<span class="text-sm font-medium">{quizLabel(q.quizId)?.emoji ?? '📝'} {quizLabel(q.quizId)?.title ?? q.quizId}</span>
 					<span class="text-xs text-muted-foreground">{fmt(q.endedAt)} · <ScoreChip correct={q.correct} total={q.total} /></span>
 				{/snippet}
 			</ActivityList>

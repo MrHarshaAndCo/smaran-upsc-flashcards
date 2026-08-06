@@ -15,8 +15,8 @@
 <div class="space-y-10 pt-8">
 	<section class="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
 		<div>
-			<p class="text-sm font-medium text-primary">{data.deck.emoji} Study set</p>
-			<h1 class="font-display text-3xl font-semibold tracking-tight">{data.deck.title}</h1>
+			<p class="eyebrow text-primary">Study set · {data.deck.emoji}</p>
+			<h1 class="font-display mt-1.5 text-3xl font-semibold tracking-tight">{data.deck.title}</h1>
 			<p class="mt-2 max-w-xl text-muted-foreground">{data.deck.blurb}</p>
 			<div class="mt-4">
 				<a href={`/study/${data.deck.id}`}><Button size="lg">Start studying</Button></a>
@@ -36,14 +36,14 @@
 	</section>
 
 	<section>
-		<h2 class="mb-4 text-2xl font-bold">Leaderboard — {data.deck.title}</h2>
+		<h2 class="font-display mb-4 text-xl font-semibold tracking-tight">Leaderboard — {data.deck.title}</h2>
 		<Leaderboard entries={data.entries} deckTitle={data.deck.title} highlight={data.user.id} />
 	</section>
 
 	{#if data.nemesis && data.duels.length > 0}
 		<section>
 			<div class="mb-4 flex items-center justify-between">
-				<h2 class="text-2xl font-bold">Your duel with {data.nemesis.name}</h2>
+				<h2 class="font-display text-xl font-semibold tracking-tight">Your duel with {data.nemesis.name}</h2>
 				<a href="/nemesis" class="text-sm text-muted-foreground hover:text-foreground">Dossier →</a>
 			</div>
 			<Card class="divide-y">

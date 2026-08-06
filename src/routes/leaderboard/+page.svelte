@@ -1,5 +1,4 @@
 <script>
-	import { Trophy } from 'lucide-svelte';
 	import Leaderboard from '$lib/components/Leaderboard.svelte';
 	import Stat from '$lib/components/Stat.svelte';
 
@@ -14,17 +13,15 @@
 	const top = $derived(entries[0] ?? null);
 </script>
 
-<div class="space-y-8 pt-8">
-	<div>
-		<div class="flex items-center gap-2">
-			<Trophy class="size-5 text-primary" />
-			<h1 class="font-display text-3xl font-semibold tracking-tight">Leaderboard</h1>
-		</div>
-		<p class="mt-1 max-w-xl text-muted-foreground">
+<div class="space-y-8 pt-6">
+	<header class="border-b border-border pb-5">
+		<p class="eyebrow text-primary">The hall of names</p>
+		<h1 class="font-display mt-1.5 text-3xl font-semibold tracking-tight">Leaderboard</h1>
+		<p class="mt-1 max-w-xl text-sm text-muted-foreground">
 			Accuracy is correct answers ÷ reviews. The nemesis system pairs you with the student
 			closest to your own accuracy — always someone worth catching.
 		</p>
-	</div>
+	</header>
 
 	<div class="flex gap-2 overflow-x-auto pb-1">
 		<button onclick={() => (selected = 'global')} class="shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium transition-colors {selected === 'global' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-input hover:bg-muted'}">

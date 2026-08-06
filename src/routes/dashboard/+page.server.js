@@ -1,5 +1,4 @@
 import { redirect } from '@sveltejs/kit';
-import { QUIZZES } from '$lib/data/quizzes.js';
 import { getStore } from '$lib/data/store.js';
 import { getNemesisData } from '$lib/nemesisData.js';
 
@@ -35,9 +34,6 @@ export async function load({ cookies }) {
 		roomDeckAccuracy[r.deckId] = r.rate;
 	}
 
-	const quizTitles = new Map(QUIZZES.map((q) => [q.id, q]));
-	quizTitles.set('quick', { title: 'Quick Quiz', emoji: '⚡' });
-
 	const rank = leaderboard.findIndex((e) => e.userId === userId) + 1;
 	const leader = leaderboard[0] ?? null;
 
@@ -51,7 +47,6 @@ export async function load({ cookies }) {
 		nemesis,
 		devices,
 		quizSessions,
-		quizTitles: Object.fromEntries(quizTitles),
 		roomDeckAccuracy
 	};
 }
