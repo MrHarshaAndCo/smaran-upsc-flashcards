@@ -1,70 +1,105 @@
 <script>
-	import { RotateCcw, Layers, ArrowRight, BookOpen } from 'lucide-svelte';
-	import DeckCard from '$lib/components/DeckCard.svelte';
-	import Stat from '$lib/components/Stat.svelte';
+	import { goto } from '$app/navigation';
+	import Flashcard from '$lib/components/Flashcard.svelte';
+	import FeedbackPanel from '$lib/components/FeedbackPanel.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Card } from '$lib/components/ui/card';
+	import { StudySession } from '$lib/study/session.svelte.js';
 
 	let { data } = $props();
 
-	const dueDecks = $derived(data.deckStats.filter((s) => s.due > 0));
-	const unfinishedDecks = $derived(data.deckStats.filter((s) => s.newCards > 0));
+	// svelte-ignore state_referenced_locally — server load data is static per page
+	const session = new StudySession({
+		deck: data.deck,
+		cards: data.cards,
+		cardStates: data.cardStates,
+		peerStats: data.peerStats,
+		nemesisStats: data.nemesisStats,
+		nemesisName: data.nemesisName,
+		nemesisUserId: data.nemesisUserId,
+		myMeta: data.myMeta,
+		userName: data.user?.name
+	});
+
+	$effect(() => {
+		function onKey(e) {
+			if (session.done) return;
+			if (e.key === ' ' || e.key === 'Enter') {
+				if (!session.flipped) {
+					e.preventDefault();
+					session.flipped = true;
+				}
+			} else if (session.flipped && !session.rated) {
+				const map = { '1': 'again', '2': 'hard', '3': 'good', '4': 'easy' };
+				if (map[e.key]) session.rate(map[e.key]);
+			}
+		}
+		window.addEventListener('keydown', onKey);
+		return () => window.removeEventListener('keydown', onKey);
+	});
 </script>
 
-<div class="space-y-8 pt-6">
-	<header class="border-b border-border pb-5">
-		<p class="eyebrow text-primary">Flashcards</p>
-		<h1 class="font-display mt-1.5 text-3xl font-semibold tracking-tight">Flashcards</h1>
-		<p class="mt-1 text-sm text-muted-foreground">Spaced repetition — cards you've seen come back just before you forget them.</p>
-	</header>
-
-	<div class="grid grid-cols-2 gap-3">
-		<Stat label="Due for review" value={data.dueTotal} sub="cards the scheduler wants back" />
-		<Stat label="Unfinished" value={data.newTotal} sub="cards you haven't touched" tone={data.newTotal > 0 ? 'primary' : ''} />
-	</div>
-
-	{#if dueDecks.length > 0}
-		<section>
-			<h2 class="font-display mb-3 text-xl font-semibold tracking-tight">Due now</h2>
-			<Card class="divide-y">
-				{#each dueDecks as s (s.deck.id)}
-					<div class="flex items-center justify-between gap-3 p-4">
-						<div class="flex min-w-0 items-center gap-3">
-							<span class="text-xl">{s.deck.emoji}</span>
-							<div class="min-w-0">
-								<p class="truncate font-medium">{s.deck.title}</p>
-								<p class="font-mono text-xs text-muted-foreground">{s.due} due · {s.newCards} new</p>
-							</div>
-						</div>
-						<a href={`/study/${s.deck.id}`} class="shrink-0">
-							<Button size="sm">
-								<RotateCcw class="size-3.5" /> Review
-							</Button>
-						</a>
-					</div>
-				{/each}
-			</Card>
-		</section>
-	{:else if data.dueTotal === 0 && data.userId}
-		<div class="margin-rule flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground">
-			<span class="text-lg">🌤️</span>
-			<span>Nothing due right now — the pile is clear. <a href="/dashboard" class="font-medium text-primary hover:underline">See your dashboard</a> or pick a deck below.</span>
+<div class="mx-auto max-w-2xl space-y-6 pt-6">
+	{#if !data.cards.length}
+		<div class="flex flex-col items-center gap-3 py-20 text-center">
+			<p class="text-3xl">🃏</p>
+			<p class="font-display text-xl font-semibold tracking-tight">No flashcards yet</p>
+			<p class="max-w-sm text-sm text-muted-foreground">The card sets are empty for now — come back when they land.</p>
 		</div>
+	{:else if session.done}
+		<div class="space-y-4 pt-2">
+			<p class="eyebrow text-primary">Session report</p>
+			<h1 class="font-display text-4xl font-semibold tracking-tight">
+				{Math.round((session.summary.correct / Math.max(session.summary.total, 1)) * 100)}%
+				<span class="text-lg font-medium text-muted-foreground"> — {session.summary.correct}/{session.summary.total} correct</span>
+			</h1>
+			<div class="grid grid-cols-3 gap-3">
+				<Card class="p-4"><p class="text-xs text-muted-foreground">Lapses</p><p class="font-mono mt-1 text-2xl font-semibold">{session.summary.lapses}</p></Card>
+				<Card class="p-4"><p class="text-xs text-muted-foreground">Missed</p><p class="font-mono mt-1 text-2xl font-semibold">{session.summary.missedCards}</p></Card>
+				<Card class="p-4"><p class="text-xs text-muted-foreground">Re-pass</p><p class="font-mono mt-1 text-2xl font-semibold">{session.repass ? 'Done' : 'None'}</p></Card>
+			</div>
+			<FeedbackPanel items={[session.summary.advice]} />
+			{#if session.summary.aiCoach}
+				<FeedbackPanel items={[{ tone: 'bad', title: 'Coach', body: session.summary.aiCoach }]} />
+			{/if}
+			{#if session.summary.nemesisNote}
+				<FeedbackPanel items={[{ tone: 'neutral', title: 'Rival report', body: session.summary.nemesisNote }]} />
+			{/if}
+			<div class="flex flex-wrap gap-3 pt-2">
+				<Button onclick={() => session.restart()} disabled={session.posting}>Study again</Button>
+				<Button variant="outline" onclick={() => goto('/dashboard')} disabled={session.posting}>View dashboard</Button>
+			</div>
+		</div>
+	{:else}
+		<div class="flex items-center justify-between">
+			<p class="font-mono text-xs font-medium text-primary">{data.deck.emoji} {data.deck.title}</p>
+			<p class="font-mono text-sm text-muted-foreground">
+				Card {session.answered + 1} / {session.totalInPass}{session.repass ? ' · re-test' : ''}
+			</p>
+		</div>
+		<div class="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+			<div class="h-full rounded-full bg-primary transition-all" style={`width: ${Math.min(100, (session.answered / Math.max(session.totalInPass, 1)) * 100)}%`} />
+		</div>
+
+		{#key session.current.id}
+			<Flashcard card={session.current} deck={data.deck} bind:flipped={session.flipped} />
+		{/key}
+
+		{#if session.rated}
+			<div class="space-y-4">
+				<FeedbackPanel items={session.feedbacks} />
+				<Button class="w-full" size="lg" onclick={() => session.next()} disabled={session.posting}>
+					{session.idx + 1 < session.queue.length || session.requeue.length > 0 ? 'Next card' : 'See results'}
+				</Button>
+			</div>
+		{:else}
+			<div class="grid grid-cols-4 gap-2">
+				<Button variant="outline" class="h-12 border-red-300 text-red-700 hover:bg-red-50" onclick={() => session.rate('again')} disabled={!session.flipped}>1 · Again</Button>
+				<Button variant="outline" class="h-12 border-amber-300 text-amber-700 hover:bg-amber-50" onclick={() => session.rate('hard')} disabled={!session.flipped}>2 · Hard</Button>
+				<Button variant="outline" class="h-12 border-green-300 text-green-700 hover:bg-green-50" onclick={() => session.rate('good')} disabled={!session.flipped}>3 · Good</Button>
+				<Button variant="outline" class="h-12 border-primary/40 text-primary hover:bg-primary/10" onclick={() => session.rate('easy')} disabled={!session.flipped}>4 · Easy</Button>
+			</div>
+			<p class="text-center text-xs text-muted-foreground">Tap the card or press Space to flip · 1–4 to rate</p>
+		{/if}
 	{/if}
-
-	<section>
-		<div class="mb-3 flex items-center justify-between">
-			<h2 class="font-display text-xl font-semibold tracking-tight">All decks</h2>
-			<span class="font-mono text-xs text-muted-foreground">{unfinishedDecks.length} unfinished</span>
-		</div>
-		<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-			{#each data.deckStats as s (s.deck.id)}
-				<DeckCard {s} />
-			{/each}
-		</div>
-	</section>
-
-	<div class="flex justify-center pt-2">
-		<a href="/quiz"><Button variant="outline" class="gap-2"><BookOpen class="size-4" /> Prefer MCQs? Practice a subject <ArrowRight class="size-3.5" /></Button></a>
-	</div>
 </div>

@@ -254,6 +254,57 @@ class MockStore {
 			.map((u) => ({ id: u.id, name: u.name, avatar: u.avatar }));
 	}
 
+	async getStudyContext(userId) {
+		const deck = { id: 'all', title: 'All cards', emoji: '📚' };
+		const cardStates = new Map();
+		for (const [key, st] of this.states) {
+			if (key.startsWith(`${userId}:`)) cardStates.set(key.slice(userId.length + 1), { ...st });
+		}
+		const peerStats = new Map();
+		for (const list of this.reviewsByUser.values()) {
+			for (const r of list) {
+				const cur = peerStats.get(r.cardId) ?? { correctCount: 0, totalCount: 0 };
+				cur.totalCount++;
+				if (isCorrect(r)) cur.correctCount++;
+				peerStats.set(r.cardId, cur);
+			}
+		}
+		const myMeta = new Map();
+		for (const r of this.reviewsByUser.get(userId) ?? []) {
+			const cur = myMeta.get(r.cardId) ?? { reviewCount: 0, lastAt: 0 };
+			cur.reviewCount++;
+			cur.lastAt = Math.max(cur.lastAt, r.at);
+			myMeta.set(r.cardId, cur);
+		}
+		const user = this.users.get(userId) ?? null;
+		const nemesis = await this.findNemesis(userId);
+		let nemesisStats = null;
+		let nemesisName = null;
+		let nemesisUserId = null;
+		if (nemesis) {
+			nemesisName = nemesis.name;
+			nemesisUserId = nemesis.userId;
+			nemesisStats = new Map();
+			for (const r of this.reviewsByUser.get(nemesis.userId) ?? []) {
+				const cur = nemesisStats.get(r.cardId) ?? { correctCount: 0, totalCount: 0 };
+				cur.totalCount++;
+				if (isCorrect(r)) cur.correctCount++;
+				nemesisStats.set(r.cardId, cur);
+			}
+		}
+		return {
+			deck,
+			cards: ALL_CARDS,
+			cardStates: Object.fromEntries(cardStates),
+			peerStats: Object.fromEntries(peerStats),
+			myMeta: Object.fromEntries(myMeta),
+			nemesisStats: nemesisStats ? Object.fromEntries(nemesisStats) : null,
+			nemesisName,
+			nemesisUserId,
+			user
+		};
+	}
+
 	// ---- decks & cards -------------------------------------------------
 
 	async getDecks() {
@@ -543,8 +594,8 @@ class MockStore {
 			return {
 				id: s.id,
 				deckId: s.deckId,
-				deckTitle: deck?.title ?? 'Unknown deck',
-				emoji: deck?.emoji ?? '📘',
+				deckTitle: s.deckId === 'all' ? 'All cards' : (deck?.title ?? 'Unknown deck'),
+				emoji: s.deckId === 'all' ? '📚' : (deck?.emoji ?? '📘'),
 				startedAt: s.startedAt,
 				endedAt: s.endedAt,
 				correct,
@@ -1004,8 +1055,8 @@ class NeonStore {
 			return {
 				id: s.id,
 				deckId: s.deckId,
-				deckTitle: deck?.title ?? 'Unknown deck',
-				emoji: deck?.emoji ?? '📘',
+				deckTitle: s.deckId === 'all' ? 'All cards' : (deck?.title ?? 'Unknown deck'),
+				emoji: s.deckId === 'all' ? '📚' : (deck?.emoji ?? '📘'),
 				startedAt: s.startedAt,
 				endedAt: s.endedAt,
 				correct: results.filter((r) => r.rating !== 'again').length,
@@ -1159,6 +1210,61 @@ class NeonStore {
 			'SELECT id, name, avatar FROM users WHERE lower(name) LIKE lower($1) ORDER BY created_at DESC LIMIT $2',
 			[`%${query}%`, Math.min(Math.max(limit, 1), 25)]
 		);
+	}
+
+	async getStudyContext(userId) {
+		const deck = { id: 'all', title: 'All cards', emoji: '📚' };
+		const [cardStateRows, peerRows, myMetaRows, userRows, nemesis] = await Promise.all([
+			this.sql(
+				'SELECT card_id AS "cardId", ease, interval_days AS "intervalDays", reps, lapses, due FROM card_states WHERE user_id = $1',
+				[userId]
+			),
+			this.sql(
+				`SELECT card_id AS "cardId",
+				        count(*)::int AS "totalCount",
+				        count(*) FILTER (WHERE rating <> 'again')::int AS "correctCount"
+				 FROM reviews GROUP BY card_id`
+			),
+			this.sql(
+				'SELECT card_id AS "cardId", count(*)::int AS "reviewCount", max(at) AS "lastAt" FROM reviews WHERE user_id = $1 GROUP BY card_id',
+				[userId]
+			),
+			this.sql('SELECT id, name, avatar FROM users WHERE id = $1', [userId]),
+			this.findNemesis(userId)
+		]);
+		const cardStates = new Map();
+		for (const r of cardStateRows) cardStates.set(r.cardId, r);
+		const peerStats = new Map();
+		for (const r of peerRows) peerStats.set(r.cardId, { correctCount: r.correctCount, totalCount: r.totalCount });
+		const myMeta = new Map();
+		for (const r of myMetaRows) myMeta.set(r.cardId, { reviewCount: r.reviewCount, lastAt: r.lastAt });
+		let nemesisStats = null;
+		let nemesisName = null;
+		let nemesisUserId = null;
+		if (nemesis) {
+			nemesisName = nemesis.name;
+			nemesisUserId = nemesis.userId;
+			const rows = await this.sql(
+				`SELECT card_id AS "cardId",
+				        count(*)::int AS "totalCount",
+				        count(*) FILTER (WHERE rating <> 'again')::int AS "correctCount"
+				 FROM reviews WHERE user_id = $1 GROUP BY card_id`,
+				[nemesis.userId]
+			);
+			nemesisStats = new Map();
+			for (const r of rows) nemesisStats.set(r.cardId, { correctCount: r.correctCount, totalCount: r.totalCount });
+		}
+		return {
+			deck,
+			cards: ALL_CARDS,
+			cardStates: Object.fromEntries(cardStates),
+			peerStats: Object.fromEntries(peerStats),
+			myMeta: Object.fromEntries(myMeta),
+			nemesisStats: nemesisStats ? Object.fromEntries(nemesisStats) : null,
+			nemesisName,
+			nemesisUserId,
+			user: userRows[0] ?? null
+		};
 	}
 
 	async saveQuizSession({ userId, quizId, startedAt, endedAt, results }) {
@@ -1379,6 +1485,7 @@ export function _resetStore() {
  * @property {(userId: string) => Promise<Array<{ id: string, name: string, emoji: string, description: string|null, createdAt: number, memberCount: number }>>} getUserGroups
  * @property {(groupId: string) => Promise<{ id: string, name: string, emoji: string, description: string|null, createdBy: string, createdAt: number, members: Array<{ userId: string, name: string, avatar: string, joinedAt: number, reviews: number, accuracy: number }> }|null>} getGroup
  * @property {(query: string, args?: { limit?: number }) => Promise<Array<{ id: string, name: string, avatar: string }>>} searchUsers
+ * @property {(userId: string) => Promise<{ deck: Deck, cards: Card[], cardStates: Record<string, CardState>, peerStats: Record<string, { correctCount: number, totalCount: number }>, myMeta: Record<string, { reviewCount: number, lastAt: number }>, nemesisStats: Record<string, { correctCount: number, totalCount: number }>|null, nemesisName: string|null, nemesisUserId: string|null, user: User|null }>} getStudyContext
  * @property {(userId: string) => Promise<Map<string, CardState>>} getCardStates
  * @property {(userId: string, cardId: string) => Promise<CardState|null>} getCardState
  * @property {(args: { userId: string, cardId: string, deckId: string, rating: 'again'|'hard'|'good'|'easy', ms?: number, at?: number }) => Promise<{ state: CardState, correct: boolean }>} saveReview

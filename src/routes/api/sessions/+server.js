@@ -20,7 +20,7 @@ export async function POST({ request, cookies }) {
 		if (nemesis && nemesis.nemesisUserId) {
 			const { nemesisUserId, myCorrect, myTotal, theirCorrect, theirTotal, outcome } = nemesis;
 			const encounter = await store.recordNemesisEncounter({
-				userId, nemesisUserId, quizId, myCorrect: +myCorrect, myTotal: +myTotal,
+				userId, nemesisUserId, quizId: deckId, myCorrect: +myCorrect, myTotal: +myTotal,
 				theirCorrect: +theirCorrect, theirTotal: +theirTotal, outcome
 			});
 			const record = await store.getNemesisRecord(userId, nemesisUserId);
