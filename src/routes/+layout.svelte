@@ -23,9 +23,10 @@
 
 	const active = (href) =>
 		page.url.pathname === href || (href !== '/' && page.url.pathname.startsWith(href));
+	const isAuthPage = $derived(page.url.pathname === '/login' || page.url.pathname === '/register');
 </script>
 
-{#if !data.user}
+{#if !data.user && !isAuthPage}
 	<div class="flex min-h-screen items-center justify-center bg-muted/40 p-4">
 		<Card class="w-full max-w-sm">
 			<CardHeader class="text-center">
@@ -38,6 +39,9 @@
 			</CardContent>
 		</Card>
 	</div>
+{:else if !data.user}
+	<!-- Auth pages (login/register) — standalone, no app shell -->
+	<main class="min-h-screen">{@render children()}</main>
 {:else}
 	<header class="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
 		<div class="mx-auto flex h-14 max-w-5xl items-center gap-4 px-4">

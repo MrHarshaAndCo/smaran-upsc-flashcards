@@ -1,5 +1,4 @@
 <script>
-	import { goto } from '$app/navigation';
 	import { UserPlus } from 'lucide-svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '$lib/components/ui/card';
@@ -25,7 +24,7 @@
 			});
 			const j = await r.json().catch(() => ({}));
 			if (!r.ok) throw new Error(j.error ?? 'Could not create your account.');
-			await goto('/');
+			window.location.assign('/');
 		} catch (err) {
 			error = err.message;
 		}

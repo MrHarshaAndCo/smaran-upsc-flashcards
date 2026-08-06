@@ -3,6 +3,7 @@ import { getStore } from '$lib/data/store.js';
 import { isValidEmail } from '$lib/auth.js';
 
 export async function POST({ request, cookies }) {
+	const isHttps = request.headers.get("x-forwarded-proto") === "https";
 	const { name, email, password } = await request.json().catch(() => ({}));
 	if (!name || !name.trim()) {
 		return json({ error: 'Name is required.' }, { status: 400 });
@@ -23,6 +24,7 @@ export async function POST({ request, cookies }) {
 		path: '/',
 		httpOnly: true,
 		sameSite: 'lax',
+		secure: isHttps,
 		maxAge: 60 * 60 * 24 * 365
 	});
 	return json({ user });
