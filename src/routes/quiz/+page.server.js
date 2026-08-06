@@ -1,5 +1,7 @@
-import { QUIZZES } from '$lib/data/quizzes.js';
+import { getStore } from '$lib/data/store.js';
 
 export async function load() {
-	return { quizzes: QUIZZES };
+	const store = await getStore();
+	const [filters] = await Promise.all([store.getQuestionFilters()]);
+	return { filters };
 }

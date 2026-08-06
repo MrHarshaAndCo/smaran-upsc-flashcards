@@ -29,7 +29,7 @@ export class QuizSession {
 	startedAt = Date.now();
 	cardShownAt = Date.now();
 
-	constructor({ quiz, peerStats, nemesisStats, nemesisName, userName }) {
+	constructor({ quiz, peerStats, nemesisStats, nemesisName, userName, nemesisUserId }) {
 		this.quiz = quiz;
 		this.questions = quiz.questions;
 		this.peerStats = peerStats;

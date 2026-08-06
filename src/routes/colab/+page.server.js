@@ -2,7 +2,7 @@ import { getStore } from '$lib/data/store.js';
 
 export async function load({ cookies, url }) {
 	const store = await getStore();
-	const userId = cookies.get('smaran_u');
+	const userId = cookies.get('smaran_u') ?? null;
 	const leaderboard = await store.leaderboardEntries();
 	const myRank = leaderboard.findIndex((e) => e.userId === userId) + 1;
 
@@ -33,6 +33,7 @@ export async function load({ cookies, url }) {
 				store.getCardDuels(userId, targetId)
 			]);
 		}
+	}
 
 	// Nemesis data + devices.
 	let nemesis = null;
@@ -45,7 +46,7 @@ export async function load({ cookies, url }) {
 			nemesisHistory = await store.getNemesisHistory(userId, nemesis.userId, 12);
 		}
 	}
-	}
+	const devices = await store.listDevices(userId);
 
 	const top = leaderboard[0] ?? null;
 	const me = leaderboard[myRank - 1] ?? null;
@@ -59,7 +60,7 @@ export async function load({ cookies, url }) {
 		nemesis,
 		nemesisRecord,
 		nemesisHistory,
-		devices: await store.listDevices(userId),
+		devices,
 		room,
 		target,
 		h2h,

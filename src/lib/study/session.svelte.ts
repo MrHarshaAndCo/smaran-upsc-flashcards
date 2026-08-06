@@ -43,7 +43,7 @@ export class StudySession {
 	startedAt = Date.now();
 	cardShownAt = Date.now();
 
-	constructor({ deck, cards, cardStates, peerStats, nemesisStats, nemesisName, myMeta, userName }) {
+	constructor({ deck, cards, cardStates, peerStats, nemesisStats, nemesisName, myMeta, userName, nemesisUserId }) {
 		this.deck = deck;
 		this.deckId = deck.id;
 		this.cards = cards;
