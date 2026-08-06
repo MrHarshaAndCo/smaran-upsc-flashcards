@@ -90,7 +90,6 @@ body {
 		transparent 0 31px,
 		color-mix(in srgb, var(--foreground) 3%, transparent) 31px 32px
 	);
-	background-attachment: fixed;
 }
 
 ::selection { background: color-mix(in srgb, var(--primary) 22%, transparent); }

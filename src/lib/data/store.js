@@ -48,6 +48,11 @@ loadEnvFile();
  */
 
 const DAY = 86_400_000;
+const FILTERS_TTL = 5 * 60 * 1000;
+let filtersCache = null;
+let filtersCacheAt = 0;
+const LEADERBOARD_TTL = 60 * 1000;
+const leaderboardCache = new Map();
 
 /** Decks as stored (cards flattened separately). */
 export const ALL_DECKS = DECKS.map(({ cards, ...deck }) => ({
@@ -796,6 +801,10 @@ class NeonStore {
 	}
 
 	async leaderboardEntries(deckId) {
+		// Boards tolerate staleness; cache 60s so navs don't re-pay Neon round trips.
+		const cacheKey = deckId ?? '__global';
+		const hit = leaderboardCache.get(cacheKey);
+		if (hit && Date.now() - hit.at < LEADERBOARD_TTL) return hit.entries;
 		const filter = deckId ? 'WHERE deck_id = $1' : '';
 		const params = deckId ? [deckId] : [];
 		const rows = await this.sql(
@@ -819,9 +828,11 @@ class NeonStore {
 				};
 			})
 			.filter((e) => e.reviews > 0);
-		return entries.sort(
+		const sorted = entries.sort(
 			(a, b) => b.accuracy - a.accuracy || b.reviews - a.reviews || a.name.localeCompare(b.name)
 		);
+		leaderboardCache.set(cacheKey, { at: Date.now(), entries: sorted });
+		return sorted;
 	}
 
 	async getUserSummary(userId) {
@@ -996,6 +1007,9 @@ class NeonStore {
 	}
 
 	async getQuestionFilters() {
+		// Question bank only changes on import — cache for 5 minutes so page
+		// loads don't pay a Neon round trip for identical data every nav.
+		if (filtersCache && Date.now() - filtersCacheAt < FILTERS_TTL) return filtersCache;
 		const rows = await this.sql(
 			`SELECT s.subject,
 			        s.n,
@@ -1008,11 +1022,14 @@ class NeonStore {
 			 ) st USING (subject)
 			 GROUP BY s.subject, s.n ORDER BY s.subject`
 		);
-		return rows.map((r) => ({
+		const out = rows.map((r) => ({
 			subject: r.subject,
 			count: r.n,
 			subTopics: (r.subtopics ?? []).map((s) => ({ name: s.name, count: s.count }))
 		}));
+		filtersCache = out;
+		filtersCacheAt = Date.now();
+		return out;
 	}
 
 	async getQuestions({ subject = null, subTopic = null, limit = 20 } = {}) {

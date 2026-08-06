@@ -58,7 +58,7 @@
 					</a>
 				{/each}
 			</nav>
-			<div class="flex-1" />
+			<div class="flex-1"></div>
 			<div class="flex items-center gap-1 text-sm">
 				<span class="hidden max-w-28 truncate font-medium sm:inline">{data.user.name}</span>
 				<a href="/settings" class="inline-flex items-center rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground" title="Settings" aria-label="Settings"><Settings class="size-4" /></a>
