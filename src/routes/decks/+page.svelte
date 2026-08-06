@@ -1,9 +1,10 @@
 <script>
 	import { goto } from '$app/navigation';
+	import Flashcard from '$lib/components/Flashcard.svelte';
 	import FeedbackPanel from '$lib/components/FeedbackPanel.svelte';
 	import { Button } from '$lib/components/ui/button';
-	import { Progress } from '$lib/components/ui/progress';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
+	import { Progress } from '$lib/components/ui/progress';
 	import { StudySession } from '$lib/study/session.svelte.js';
 
 	let { data } = $props();
@@ -69,32 +70,26 @@
 			<p class="font-mono text-sm text-muted-foreground"><span class="omr-bubble">Q {session.idx + 1}</span> / {session.queue.length}{session.repass ? ' · re-test' : ''}</p>
 		</div>
 		<Progress value={session.idx} max={session.queue.length} />
-		<Card>
-			<CardHeader><CardTitle class="text-xl leading-relaxed">{session.current.front}</CardTitle></CardHeader>
-			<CardContent class="flex flex-col gap-4">
-				{#if !session.flipped}
-					<Button class="w-full" size="lg" variant="outline" onclick={() => (session.flipped = true)}>Reveal answer</Button>
-				{:else}
-					<div class="rounded-md border border-primary/20 bg-accent p-4">
-						<p class="text-xs text-muted-foreground">Answer</p>
-						<p class="mt-1 text-base font-medium">{session.current.back}</p>
-						{#if session.current.hint}<p class="mt-2 text-xs text-muted-foreground">{session.current.hint}</p>{/if}
-					</div>
-					{#if session.rated}
-						<FeedbackPanel items={session.feedbacks} />
-						<Button class="w-full" size="lg" onclick={() => session.next()} disabled={session.posting}>
-							{session.idx + 1 < session.queue.length || session.requeue.length > 0 ? 'Next card' : 'See results'}
-						</Button>
-					{:else}
-						<div class="grid grid-cols-4 gap-2">
-							<Button variant="outline" class="h-12 border-red-300 text-red-700 hover:bg-red-50" onclick={() => session.rate('again')}>1 · Again</Button>
-							<Button variant="outline" class="h-12 border-amber-300 text-amber-700 hover:bg-amber-50" onclick={() => session.rate('hard')}>2 · Hard</Button>
-							<Button variant="outline" class="h-12 border-green-300 text-green-700 hover:bg-green-50" onclick={() => session.rate('good')}>3 · Good</Button>
-							<Button variant="outline" class="h-12 border-primary/40 text-primary hover:bg-primary/10" onclick={() => session.rate('easy')}>4 · Easy</Button>
-						</div>
-					{/if}
-				{/if}
-			</CardContent>
-		</Card>
+
+		{#key session.current.id}
+			<Flashcard card={session.current} deck={data.deck} bind:flipped={session.flipped} />
+		{/key}
+
+		{#if session.rated}
+			<div class="space-y-4">
+				<FeedbackPanel items={session.feedbacks} />
+				<Button class="w-full" size="lg" onclick={() => session.next()} disabled={session.posting}>
+					{session.idx + 1 < session.queue.length || session.requeue.length > 0 ? 'Next card' : 'See results'}
+				</Button>
+			</div>
+		{:else if session.flipped}
+			<div class="grid grid-cols-4 gap-2">
+				<Button variant="outline" class="h-12 border-red-300 text-red-700 hover:bg-red-50" onclick={() => session.rate('again')}>1 · Again</Button>
+				<Button variant="outline" class="h-12 border-amber-300 text-amber-700 hover:bg-amber-50" onclick={() => session.rate('hard')}>2 · Hard</Button>
+				<Button variant="outline" class="h-12 border-green-300 text-green-700 hover:bg-green-50" onclick={() => session.rate('good')}>3 · Good</Button>
+				<Button variant="outline" class="h-12 border-primary/40 text-primary hover:bg-primary/10" onclick={() => session.rate('easy')}>4 · Easy</Button>
+			</div>
+			<p class="text-center text-xs text-muted-foreground">Space to flip · 1–4 to rate</p>
+		{/if}
 	{/if}
 </div>

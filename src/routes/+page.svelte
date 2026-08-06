@@ -1,16 +1,64 @@
 <script>
+	import { toast } from 'svelte-sonner';
 	import { Flame, LineChart, BookOpen, ArrowRight } from 'lucide-svelte';
 	import QuickQuiz from '$lib/components/QuickQuiz.svelte';
 
 	let { data } = $props();
+
+	let subject = $state('all');
+	let subTopic = $state('all');
+	let pool = $state(data.pool);
+	let busy = $state(false);
+
+	const currentSubject = $derived(subject === 'all' ? null : data.filters.find((f) => f.subject === subject) ?? null);
+	const subTopics = $derived(currentSubject?.subTopics ?? []);
+
+	async function pickSubject(s) {
+		subject = s;
+		subTopic = 'all';
+		if (s === 'all') { pool = data.pool; return; }
+		await reloadPool();
+	}
+
+	async function pickSubTopic(st) {
+		subTopic = st;
+		await reloadPool();
+	}
+
+	async function reloadPool() {
+		busy = true;
+		try {
+			const qs = new URLSearchParams({ limit: '50' });
+			if (subject !== 'all') qs.set('subject', subject);
+			if (subTopic !== 'all') qs.set('subTopic', subTopic);
+			const r = await fetch(`/api/questions?${qs}`);
+			const j = await r.json();
+			if (!j.questions?.length) {
+				toast.error('No questions for that filter yet');
+				busy = false;
+				return;
+			}
+			pool = j.questions.map((q) => ({
+				id: q.id,
+				question: q.question,
+				options: q.options,
+				correctIndex: q.answerIndex,
+				explanation: q.explanation ?? '',
+				sourceQuiz: q.subject
+			}));
+		} catch {
+			toast.error('Could not load questions');
+		}
+		busy = false;
+	}
 </script>
 
 <div class="mx-auto max-w-xl space-y-8 pt-6">
 	<header class="border-b border-border pb-5">
 		<div class="flex items-end justify-between gap-4">
 			<div>
-				<p class="eyebrow text-muted-foreground">GENERAL STUDIES</p>
-				<h1 class="font-display mt-1.5 text-3xl italic tracking-tight">Mixed Grand Test</h1>
+				<p class="eyebrow text-muted-foreground">{subject === 'all' ? 'GENERAL STUDIES' : subject.toUpperCase()}</p>
+				<h1 class="font-display mt-1.5 text-3xl italic tracking-tight">{subject === 'all' ? 'Mixed Grand Test' : subject}</h1>
 				<p class="mt-1 text-sm text-muted-foreground">{data.questionTotal.toLocaleString('en-IN')} real Prelims questions · random every round</p>
 			</div>
 			{#if data.summary}
@@ -26,8 +74,30 @@
 		</div>
 	</header>
 
+	<!-- Subject chips -->
+	<div class="flex flex-wrap gap-1.5">
+		<button onclick={() => pickSubject('all')} class="rounded-full border px-3 py-1 text-xs font-medium transition-colors {subject === 'all' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:bg-muted border-input'}">All subjects</button>
+		{#each data.filters as f (f.subject)}
+			<button onclick={() => pickSubject(f.subject)} class="rounded-full border px-3 py-1 text-xs font-medium transition-colors {subject === f.subject ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:bg-muted border-input'}">
+				{f.subject} <span class="font-mono opacity-60">({f.count})</span>
+			</button>
+		{/each}
+	</div>
+
+	<!-- Sub-topic chips -->
+	{#if currentSubject}
+		<div class="flex flex-wrap gap-1.5">
+			<button onclick={() => pickSubTopic('all')} class="rounded-full border px-2.5 py-0.5 text-[11px] font-medium transition-colors {subTopic === 'all' ? 'bg-secondary text-secondary-foreground border-secondary' : 'bg-background hover:bg-muted border-input'}">All sub-topics</button>
+			{#each subTopics as st (st.name)}
+				<button onclick={() => pickSubTopic(st.name)} class="rounded-full border px-2.5 py-0.5 text-[11px] font-medium transition-colors {subTopic === st.name ? 'bg-secondary text-secondary-foreground border-secondary' : 'bg-background hover:bg-muted border-input'}">
+					{st.name} <span class="font-mono opacity-60">({st.count})</span>
+				</button>
+			{/each}
+		</div>
+	{/if}
+
 	<QuickQuiz
-		questions={data.pool}
+		questions={pool}
 		quizId="quick"
 		emoji="⚡"
 		title="Round"

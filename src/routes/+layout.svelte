@@ -15,7 +15,7 @@
 	}
 
 	const links = [
-		{ href: '/quiz', label: 'Quiz', icon: PenLine },
+		{ href: '/', label: 'Index', icon: PenLine },
 		{ href: '/study', label: 'Study', icon: GraduationCap },
 		{ href: '/decks', label: 'Flashcard', icon: BookOpen },
 		{ href: '/colab', label: 'Colab', icon: Users },
