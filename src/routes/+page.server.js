@@ -26,6 +26,7 @@ export async function load({ cookies }) {
 	}
 
 	return {
+		filters,
 		pool: pool.map((q) => ({
 			id: q.id,
 			question: q.question,
@@ -36,12 +37,12 @@ export async function load({ cookies }) {
 		})),
 		questionTotal,
 		userName: user?.name ?? 'Aspirant',
+		summary,
 		nemesisRecord,
 		nemesis,
 		nemesisStats,
 		nemesisName: nemesis?.name ?? null,
 		nemesisUserId: nemesis?.userId ?? null,
-		userName: user?.name ?? 'Aspirant',
 		decks
 	};
 }
