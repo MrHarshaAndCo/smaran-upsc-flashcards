@@ -12,14 +12,28 @@ export async function load({ cookies }) {
 
 	const [summary, sessions, leaderboard, nemesis, devices, quizSessions] = await Promise.all([
 		store.getUserSummary(userId),
-		store.getUserSessions(userId, 8),
+		store.getUserSessions(userId, 6),
 		store.leaderboardEntries(),
 		getNemesisData(store, userId),
 		store.listDevices(userId),
 		store.getUserQuizSessions(userId, 6)
 	]);
 
+	// Room average accuracy per deck (for the radar chart overlay).
+	const roomDeckAccuracy = {};
+	for (const d of summary.perDeck) {
+		const peerStats = await store.getPeerStats(d.deckId);
+		let correct = 0;
+		let total = 0;
+		for (const s of peerStats.values()) {
+			correct += s.correctCount;
+			total += s.totalCount;
+		}
+		roomDeckAccuracy[d.deckId] = total === 0 ? null : correct / total;
+	}
+
 	const quizTitles = new Map(QUIZZES.map((q) => [q.id, q]));
+	quizTitles.set('quick', { title: 'Quick Quiz', emoji: '⚡' });
 
 	const rank = leaderboard.findIndex((e) => e.userId === userId) + 1;
 	const leader = leaderboard[0] ?? null;
@@ -34,6 +48,7 @@ export async function load({ cookies }) {
 		nemesis,
 		devices,
 		quizSessions,
-		quizTitles: Object.fromEntries(quizTitles)
+		quizTitles: Object.fromEntries(quizTitles),
+		roomDeckAccuracy
 	};
 }

@@ -1,4 +1,5 @@
 <script>
+	import { Trophy } from 'lucide-svelte';
 	import Leaderboard from '$lib/components/Leaderboard.svelte';
 	import Stat from '$lib/components/Stat.svelte';
 
@@ -15,7 +16,10 @@
 
 <div class="space-y-8 pt-8">
 	<div>
-		<h1 class="text-3xl font-bold tracking-tight">Leaderboard</h1>
+		<div class="flex items-center gap-2">
+			<Trophy class="size-5 text-primary" />
+			<h1 class="text-3xl font-bold tracking-tight">Leaderboard</h1>
+		</div>
 		<p class="mt-1 max-w-xl text-muted-foreground">
 			Accuracy is correct answers ÷ reviews. The nemesis system pairs you with the student
 			closest to your own accuracy — always someone worth catching.

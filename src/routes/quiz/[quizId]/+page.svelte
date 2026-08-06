@@ -1,5 +1,6 @@
 <script>
 	import { goto } from '$app/navigation';
+	import { PenLine } from 'lucide-svelte';
 	import FeedbackPanel from '$lib/components/FeedbackPanel.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
@@ -195,7 +196,10 @@
 
 		<Card>
 			<CardHeader>
-				<CardTitle class="text-xl leading-relaxed">{current.question}</CardTitle>
+				<div class="flex items-start gap-2">
+					<PenLine class="mt-1 size-4 shrink-0 text-primary" />
+					<CardTitle class="text-xl leading-relaxed">{current.question}</CardTitle>
+				</div>
 			</CardHeader>
 			<CardContent class="flex flex-col gap-2.5">
 				{#each current.options as option, i (i)}

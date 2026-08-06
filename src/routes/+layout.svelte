@@ -2,6 +2,7 @@
 	import '../app.css';
 	import { page } from '$app/state';
 	import { invalidateAll } from '$app/navigation';
+	import { PenLine, BookOpen, LayoutDashboard, Trophy, Swords } from 'lucide-svelte';
 	import { Toaster } from 'svelte-sonner';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
@@ -34,11 +35,11 @@
 	}
 
 	const links = [
-		{ href: '/quiz', label: 'Quiz', icon: '📝' },
-		{ href: '/decks', label: 'Study', icon: '📚' },
-		{ href: '/dashboard', label: 'Dashboard', icon: '📊' },
-		{ href: '/leaderboard', label: 'Board', icon: '🏆' },
-		{ href: '/nemesis', label: 'Rival', icon: '⚔️' }
+		{ href: '/quiz', label: 'Quiz', icon: PenLine },
+		{ href: '/decks', label: 'Study', icon: BookOpen },
+		{ href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+		{ href: '/leaderboard', label: 'Board', icon: Trophy },
+		{ href: '/nemesis', label: 'Rival', icon: Swords }
 	];
 
 	const active = (href) =>
@@ -83,7 +84,8 @@
 			</a>
 			<nav class="hidden md:flex items-center gap-1 ml-2">
 				{#each links as link}
-					<a href={link.href} class="inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium transition-colors {active(link.href) ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}">
+					<a href={link.href} class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors {active(link.href) ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}">
+						<link.icon class="size-4" />
 						{link.label}
 					</a>
 				{/each}
@@ -106,8 +108,8 @@
 	<nav class="fixed bottom-0 left-0 right-0 z-50 border-t bg-background md:hidden">
 		<div class="mx-auto flex h-16 max-w-5xl items-center justify-around px-2">
 			{#each links as link}
-				<a href={link.href} class="flex flex-col items-center gap-0.5 rounded-md px-2 py-1 text-xs font-medium {active(link.href) ? 'text-primary' : 'text-muted-foreground'}">
-					<span class="text-lg">{link.icon}</span>
+				<a href={link.href} class="flex flex-col items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium {active(link.href) ? 'text-primary' : 'text-muted-foreground'}">
+					<link.icon class="size-5" />
 					<span>{link.label}</span>
 				</a>
 			{/each}

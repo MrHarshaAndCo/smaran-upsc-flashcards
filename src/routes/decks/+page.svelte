@@ -1,4 +1,5 @@
 <script>
+	import { BookOpen } from 'lucide-svelte';
 	import DeckCard from '$lib/components/DeckCard.svelte';
 
 	let { data } = $props();
@@ -6,7 +7,10 @@
 
 <div class="space-y-8 pt-8">
 	<div>
-		<h1 class="text-3xl font-bold tracking-tight">All decks</h1>
+		<div class="flex items-center gap-2">
+			<BookOpen class="size-5 text-primary" />
+			<h1 class="text-3xl font-bold tracking-tight">All decks</h1>
+		</div>
 		<p class="mt-1 text-muted-foreground">
 			Pick a deck and study. Your progress on each set is marked below.
 		</p>

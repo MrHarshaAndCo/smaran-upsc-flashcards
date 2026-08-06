@@ -322,3 +322,10 @@ export const QUIZZES = [
     ]
   }
 ];
+
+/** Merged question pool across all quizzes (for the quick quiz). */
+export function quickQuizPool() {
+	return QUIZZES.flatMap((q) =>
+		q.questions.map((question) => ({ ...question, sourceQuiz: q.title, emoji: q.emoji }))
+	);
+}

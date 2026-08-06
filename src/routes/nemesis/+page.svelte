@@ -1,4 +1,5 @@
 <script>
+	import { Swords } from 'lucide-svelte';
 	import NemesisDossier from '$lib/components/NemesisDossier.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Card } from '$lib/components/ui/card';
@@ -19,8 +20,10 @@
 		</div>
 	{:else}
 		<div>
-			<p class="text-sm font-medium text-primary">Nemesis system</p>
-			<h1 class="text-3xl font-bold tracking-tight">The rivalry</h1>
+			<div class="flex items-center gap-2">
+				<Swords class="size-5 text-primary" />
+				<h1 class="text-3xl font-bold tracking-tight">The rivalry</h1>
+			</div>
 		</div>
 
 		<NemesisDossier nemesis={data.nemesis.nemesis} record={data.nemesis.record} taunt={data.nemesis.taunt} />
