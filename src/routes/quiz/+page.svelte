@@ -1,6 +1,6 @@
 <script>
 	import { toast } from 'svelte-sonner';
-	import { BookOpen } from 'lucide-svelte';
+	import { RotateCcw } from 'lucide-svelte';
 	import FeedbackPanel from '$lib/components/FeedbackPanel.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
@@ -11,111 +11,120 @@
 
 	const questionTotal = $derived(data.filters.reduce((a, f) => a + f.count, 0));
 
-	let studySubject = $state(null);
-	let studySubTopic = $state('all');
-	let practice = $state(null);
-	let practiceBusy = $state(false);
+	const toQuestion = (q) => ({
+		id: q.id,
+		question: q.question,
+		options: q.options,
+		correctIndex: q.answerIndex,
+		explanation: q.explanation ?? ''
+	});
 
-	async function startPractice() {
-		if (!studySubject) return;
-		practiceBusy = true;
+	let subject = $state('all');
+	let busy = $state(false);
+	let session = $state(
+		new QuizSession({
+			quiz: { id: 'quick:all', title: 'Mixed Grand Test', emoji: '⚡', questions: data.questions.map(toQuestion) },
+			peerStats: {},
+			nemesisStats: null,
+			nemesisName: null
+		})
+	);
+
+	async function startNew() {
+		busy = true;
 		try {
-			const qs = new URLSearchParams({ limit: '10' });
-			qs.set('subject', studySubject);
-			if (studySubTopic !== 'all') qs.set('subTopic', studySubTopic);
+			const qs = new URLSearchParams({ limit: '50' });
+			if (subject !== 'all') qs.set('subject', subject);
 			const r = await fetch(`/api/questions?${qs}`);
 			const j = await r.json();
 			if (!j.questions?.length) {
-				toast.error('No questions for that topic yet');
-				practiceBusy = false;
+				toast.error('No questions for that filter yet');
+				busy = false;
 				return;
 			}
-			practice = new QuizSession({
+			session = new QuizSession({
 				quiz: {
-					id: `practice:${studySubject}`,
-					title: studySubject,
-					emoji: '📘',
-					questions: j.questions.map((q) => ({
-						id: q.id,
-						question: q.question,
-						options: q.options,
-						correctIndex: q.answerIndex,
-						explanation: q.explanation ?? ''
-					}))
+					id: `quick:${subject}`,
+					title: subject === 'all' ? 'Mixed Grand Test' : subject,
+					emoji: '⚡',
+					questions: j.questions.map(toQuestion)
 				},
 				peerStats: {},
 				nemesisStats: null,
 				nemesisName: null
 			});
-		} catch (err) {
-			toast.error('Practice failed: ' + (err?.message ?? String(err)));
+		} catch {
+			toast.error('Could not load questions');
 		}
-		practiceBusy = false;
+		busy = false;
+	}
+
+	async function pickSubject(s) {
+		subject = s;
+		await startNew();
 	}
 
 	const letters = ['A', 'B', 'C', 'D'];
 </script>
 
-<div class="space-y-6 pt-6">
+<div class="mx-auto max-w-2xl space-y-6 pt-6">
 	<header class="border-b border-border pb-5">
-		<p class="eyebrow text-primary">Question bank</p>
-		<h1 class="font-display mt-1.5 text-3xl font-semibold tracking-tight">Study</h1>
-		<p class="mt-1 text-sm text-muted-foreground">{questionTotal.toLocaleString('en-IN')} real Prelims questions — practice subject by subject, topic by topic.</p>
+		<p class="eyebrow text-primary">Question bank · {questionTotal.toLocaleString('en-IN')} questions</p>
+		<h1 class="font-display mt-1.5 text-3xl font-semibold tracking-tight">Quiz</h1>
+		<p class="mt-1 text-sm text-muted-foreground">50 fresh questions every visit — pick a subject or stay mixed.</p>
 	</header>
 
-	{#if practice}
-		<button onclick={() => (practice = null)} class="text-sm text-muted-foreground hover:text-foreground">← Back to subjects</button>
-		<div class="space-y-6">
-			<div class="flex items-center justify-between">
-				<p class="font-mono text-xs font-medium text-primary">📘 {studySubject}</p>
-				<p class="font-mono text-sm text-muted-foreground">Q {practice.idx + 1} / {practice.questions.length}</p>
-			</div>
-			<Progress value={practice.idx} max={practice.questions.length} />
-			<Card>
-				<CardHeader><CardTitle class="text-xl leading-relaxed">{practice.current.question}</CardTitle></CardHeader>
-				<CardContent class="flex flex-col gap-2.5">
-					{#each practice.current.options as option, i (i)}
-						<Button variant={practice.optionVariant(i)} size="lg" class="h-auto w-full justify-start py-3.5 text-left" disabled={practice.answered} onclick={() => practice.choose(i)}>
-							<span class="mr-2 font-mono text-sm opacity-70">{letters[i]}</span>
-							<span class="whitespace-normal">{option}</span>
-						</Button>
-					{/each}
-				</CardContent>
-			</Card>
-			{#if practice.answered}
-				<div class="space-y-4">
-					<FeedbackPanel items={practice.feedback} />
-					<Button class="w-full" size="lg" onclick={() => practice.next()}>{practice.idx + 1 < practice.questions.length ? 'Next question' : 'See results'}</Button>
-				</div>
-			{:else}
-				<Button class="w-full" size="lg" disabled={practice.selected === null} onclick={() => practice.check()}>Check answer</Button>
+	<div class="flex flex-wrap gap-2">
+		<button onclick={() => pickSubject('all')} class="rounded-full border px-3 py-1 text-xs font-medium transition-colors {subject === 'all' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:bg-muted border-input'}">All subjects</button>
+		{#each data.filters as f (f.subject)}
+			<button onclick={() => pickSubject(f.subject)} class="rounded-full border px-3 py-1 text-xs font-medium transition-colors {subject === f.subject ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:bg-muted border-input'}">
+				{f.subject} <span class="font-mono opacity-60">({f.count})</span>
+			</button>
+		{/each}
+	</div>
+
+	{#if session.done}
+		<div class="space-y-4 pt-2">
+			<p class="eyebrow text-primary">Round over</p>
+			<h1 class="font-display text-6xl font-semibold tracking-tight">{Math.round((session.summary.correct / Math.max(session.summary.total, 1)) * 100)}%</h1>
+			<p class="text-muted-foreground">{session.summary.correct} of {session.summary.total} correct</p>
+			<FeedbackPanel items={[session.summary.advice]} />
+			{#if session.summary.rivalNote}
+				<FeedbackPanel items={[{ tone: 'neutral', title: 'Rival report', body: session.summary.rivalNote }]} />
 			{/if}
-		</div>
-	{:else if !studySubject}
-		<div class="grid gap-3 sm:grid-cols-2">
-			{#each data.filters as f (f.subject)}
-				<Card class="cursor-pointer p-5 transition-shadow hover:shadow-md" onclick={() => (studySubject = f.subject, studySubTopic = 'all')}>
-					<div class="flex items-center justify-between">
-						<span class="font-semibold">{f.subject}</span>
-						<span class="font-mono text-xs text-muted-foreground">{f.count} questions</span>
-					</div>
-					<p class="mt-1 text-xs text-muted-foreground"><span class="font-mono">{f.subTopics.length}</span> sub-topics</p>
-				</Card>
-			{/each}
+			<div class="flex flex-wrap gap-3 pt-2">
+				<Button size="lg" onclick={startNew} disabled={busy}>
+					<RotateCcw class="size-4" /> {busy ? 'Loading…' : 'New 50'}
+				</Button>
+				<Button variant="outline" size="lg" href="/dashboard">Dashboard</Button>
+			</div>
 		</div>
 	{:else}
-		<div>
-			<button onclick={() => (studySubject = null)} class="text-sm text-muted-foreground hover:text-foreground">← All subjects</button>
-			<h2 class="font-display mt-2 text-xl font-semibold tracking-tight">{studySubject}</h2>
-			<div class="mt-3 flex flex-wrap gap-2">
-				<button onclick={() => (studySubTopic = 'all')} class="rounded-full border px-3 py-1 text-xs font-medium {studySubTopic === 'all' ? 'bg-secondary text-secondary-foreground' : 'bg-background hover:bg-muted border-input'}">All sub-topics</button>
-				{#each data.filters.find((f) => f.subject === studySubject)?.subTopics ?? [] as st (st.name)}
-					<button onclick={() => (studySubTopic = st.name)} class="rounded-full border px-3 py-1 text-xs font-medium {studySubTopic === st.name ? 'bg-secondary text-secondary-foreground' : 'bg-background hover:bg-muted border-input'}">{st.name} <span class="font-mono opacity-60">({st.count})</span></button>
-				{/each}
-			</div>
-			<Button class="mt-4" size="lg" onclick={startPractice} disabled={practiceBusy}>
-				<BookOpen class="size-4" /> {practiceBusy ? 'Loading…' : `Practice ${studySubject}`}
-			</Button>
+		<div class="flex items-center justify-between">
+			<p class="font-mono text-xs font-medium text-primary">{session.quiz.emoji} {session.quiz.title}</p>
+			<p class="font-mono text-sm text-muted-foreground">Q {session.idx + 1} / {session.questions.length}</p>
 		</div>
+		<Progress value={session.idx} max={session.questions.length} />
+		<Card>
+			<CardHeader><CardTitle class="text-xl leading-relaxed">{session.current.question}</CardTitle></CardHeader>
+			<CardContent class="flex flex-col gap-2.5">
+				{#each session.current.options as option, i (i)}
+					<Button variant={session.optionVariant(i)} size="lg" class="h-auto w-full justify-start py-3.5 text-left" disabled={session.answered} onclick={() => session.choose(i)}>
+						<span class="mr-2 font-mono text-sm opacity-70">{letters[i]}</span>
+						<span class="whitespace-normal">{option}</span>
+					</Button>
+				{/each}
+			</CardContent>
+		</Card>
+		{#if session.answered}
+			<div class="space-y-4">
+				<FeedbackPanel items={session.feedback} />
+				<Button class="w-full" size="lg" onclick={() => session.next()}>
+					{session.idx + 1 < session.questions.length ? 'Next question' : 'See results'}
+				</Button>
+			</div>
+		{:else}
+			<Button class="w-full" size="lg" disabled={session.selected === null} onclick={() => session.check()}>Check answer</Button>
+		{/if}
 	{/if}
 </div>
