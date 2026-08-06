@@ -4,12 +4,14 @@ import { QUIZZES, quickQuizPool } from '$lib/data/quizzes.js';
 export async function load({ cookies }) {
 	const store = await getStore();
 	const userId = cookies.get('smaran_u');
-	const [summary, nemesis, user, decks] = await Promise.all([
+	const [summary, nemesis, user, decks, filters] = await Promise.all([
 		store.getUserSummary(userId),
 		store.findNemesis(userId),
 		userId ? store.getUser(userId) : null,
-		store.getDecks()
+		store.getDecks(),
+		store.getQuestionFilters()
 	]);
+	const questionTotal = filters.reduce((a, f) => a + f.count, 0);
 
 	// Nemesis per-question stats across the whole merged pool, for the
 	// nemesis-aware miss toasts.
@@ -24,6 +26,7 @@ export async function load({ cookies }) {
 
 	return {
 		pool: quickQuizPool(),
+		questionTotal,
 		summary,
 		nemesis,
 		nemesisStats,

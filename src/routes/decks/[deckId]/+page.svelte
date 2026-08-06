@@ -16,7 +16,7 @@
 	<section class="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
 		<div>
 			<p class="text-sm font-medium text-primary">{data.deck.emoji} Study set</p>
-			<h1 class="text-3xl font-bold tracking-tight">{data.deck.title}</h1>
+			<h1 class="font-display text-3xl font-semibold tracking-tight">{data.deck.title}</h1>
 			<p class="mt-2 max-w-xl text-muted-foreground">{data.deck.blurb}</p>
 			<div class="mt-4">
 				<a href={`/study/${data.deck.id}`}><Button size="lg">Start studying</Button></a>

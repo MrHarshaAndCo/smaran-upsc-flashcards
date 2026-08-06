@@ -9,7 +9,7 @@
 	<div>
 		<div class="flex items-center gap-2">
 			<BookOpen class="size-5 text-primary" />
-			<h1 class="text-3xl font-bold tracking-tight">All decks</h1>
+			<h1 class="font-display text-3xl font-semibold tracking-tight">All decks</h1>
 		</div>
 		<p class="mt-1 text-muted-foreground">
 			Pick a deck and study. Your progress on each set is marked below.

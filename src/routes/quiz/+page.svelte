@@ -17,6 +17,7 @@
 	let quickQuestions = $state(null);
 	let quickBusy = $state(false);
 
+	const questionTotal = $derived(data.filters.reduce((a, f) => a + f.count, 0));
 	const currentSubject = $derived(subject === 'all' ? null : data.filters.find((f) => f.subject === subject) ?? null);
 	const subTopics = $derived(currentSubject?.subTopics ?? []);
 	const subTopicCount = $derived(subject === 'all' ? data.filters.reduce((a, f) => a + f.subTopics.length, 0) : subTopics.length);
@@ -105,10 +106,11 @@
 </script>
 
 <div class="space-y-6 pt-6">
-	<div>
-		<h1 class="text-3xl font-bold tracking-tight">Quiz</h1>
-		<p class="mt-1 text-muted-foreground">9,000+ real Prelims questions — quick fire, subject practice, or study resources.</p>
-	</div>
+	<header class="border-b border-border pb-5">
+		<p class="eyebrow text-primary">Question bank</p>
+		<h1 class="font-display mt-1.5 text-3xl font-semibold tracking-tight">Quiz</h1>
+		<p class="mt-1 text-sm text-muted-foreground">{questionTotal.toLocaleString('en-IN')} real Prelims questions — quick fire, subject practice, or study resources.</p>
+	</header>
 
 	<Tabs value="start">
 		<TabsList>
@@ -121,27 +123,27 @@
 		<TabsContent value="start" class="space-y-6 pt-6">
 			{#if !quickQuestions}
 				<Card class="p-6">
-					<CardHeader class="px-0 pt-0"><CardTitle>Pick your battlefield</CardTitle></CardHeader>
+					<CardHeader class="px-0 pt-0"><CardTitle class="font-display text-2xl font-semibold tracking-tight">Pick your battlefield</CardTitle></CardHeader>
 					<CardContent class="space-y-4 px-0 pb-0">
 						<div>
-							<p class="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Subject</p>
+							<p class="eyebrow mb-2 text-muted-foreground">Subject</p>
 							<div class="flex flex-wrap gap-2">
 								<button onclick={() => (subject = 'all', subTopic = 'all')} class="rounded-full border px-3.5 py-1.5 text-sm font-medium {subject === 'all' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:bg-muted border-input'}">All subjects</button>
 								{#each data.filters as f (f.subject)}
 									<button onclick={() => (subject = f.subject, subTopic = 'all')} class="rounded-full border px-3.5 py-1.5 text-sm font-medium {subject === f.subject ? 'bg-primary text-primary-foreground border-primary' : 'bg-background hover:bg-muted border-input'}">
-										{f.subject} <span class="opacity-60">({f.count})</span>
+										{f.subject} <span class="font-mono opacity-60">({f.count})</span>
 									</button>
 								{/each}
 							</div>
 						</div>
 						{#if currentSubject}
 							<div>
-								<p class="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Sub-topic ({subTopics.length})</p>
+								<p class="eyebrow mb-2 text-muted-foreground">Sub-topic ({subTopics.length})</p>
 								<div class="flex flex-wrap gap-2">
 									<button onclick={() => (subTopic = 'all')} class="rounded-full border px-3 py-1 text-xs font-medium {subTopic === 'all' ? 'bg-secondary text-secondary-foreground' : 'bg-background hover:bg-muted border-input'}">All sub-topics</button>
 									{#each subTopics as st (st.name)}
 										<button onclick={() => (subTopic = st.name)} class="rounded-full border px-3 py-1 text-xs font-medium {subTopic === st.name ? 'bg-secondary text-secondary-foreground' : 'bg-background hover:bg-muted border-input'}">
-											{st.name} <span class="opacity-60">({st.count})</span>
+											{st.name} <span class="font-mono opacity-60">({st.count})</span>
 										</button>
 									{/each}
 								</div>
@@ -194,9 +196,9 @@
 						<Card class="cursor-pointer p-5 transition-shadow hover:shadow-md" onclick={() => (studySubject = f.subject, studySubTopic = 'all')}>
 							<div class="flex items-center justify-between">
 								<span class="font-semibold">{f.subject}</span>
-								<span class="text-xs text-muted-foreground">{f.count} questions</span>
+								<span class="font-mono text-xs text-muted-foreground">{f.count} questions</span>
 							</div>
-							<p class="mt-1 text-xs text-muted-foreground">{f.subTopics.length} sub-topics</p>
+							<p class="mt-1 text-xs text-muted-foreground"><span class="font-mono">{f.subTopics.length}</span> sub-topics</p>
 						</Card>
 					{/each}
 				</div>

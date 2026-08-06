@@ -1,5 +1,4 @@
 <script>
-	import { LogIn } from 'lucide-svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { Input } from '$lib/components/ui/input';
@@ -32,11 +31,10 @@
 </script>
 
 <div class="flex min-h-[70vh] items-center justify-center p-4">
-	<Card class="w-full max-w-sm">
+	<Card class="w-full max-w-sm border-t-2 border-t-primary">
 		<CardHeader class="text-center">
-			<CardTitle class="flex items-center justify-center gap-2 text-2xl">
-				<LogIn class="size-5 text-primary" /> Log in
-			</CardTitle>
+			<p class="eyebrow text-primary">The Makkhali Project</p>
+			<CardTitle class="font-display text-2xl font-semibold tracking-tight">Log in</CardTitle>
 			<CardDescription>Welcome back — your nemesis missed you.</CardDescription>
 		</CardHeader>
 		<CardContent>

@@ -67,7 +67,7 @@
 	<div class="flex flex-wrap items-end justify-between gap-2">
 		<div>
 			<p class="text-sm font-medium text-primary">Student dashboard</p>
-			<h1 class="text-3xl font-bold tracking-tight">Welcome back, {data.user.name}</h1>
+			<h1 class="font-display text-3xl font-semibold tracking-tight">Welcome back, {data.user.name}</h1>
 		</div>
 		{#if data.rank > 0}
 			<div class="flex items-center gap-1.5 rounded-full border bg-background px-3 py-1.5 text-sm">
@@ -85,7 +85,7 @@
 				<p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Accuracy</p>
 				<Target class="size-4 text-primary" />
 			</div>
-			<p class="mt-1 text-2xl font-bold">{Math.round(accuracy)}%</p>
+			<p class="mt-1 font-mono text-2xl font-semibold tracking-tight">{Math.round(accuracy)}%</p>
 			<p class="text-xs text-muted-foreground">{data.summary.correct}/{data.summary.total} reviews</p>
 		</Card>
 		<Card class="p-4">
@@ -93,7 +93,7 @@
 				<p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Streak</p>
 				<Flame class="size-4 text-orange-500" />
 			</div>
-			<p class="mt-1 text-2xl font-bold">{data.summary.streak}</p>
+			<p class="mt-1 font-mono text-2xl font-semibold tracking-tight">{data.summary.streak}</p>
 			<p class="text-xs text-muted-foreground">correct in a row</p>
 		</Card>
 		<Card class="p-4">
@@ -101,7 +101,7 @@
 				<p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Due now</p>
 				<Clock3 class="size-4 text-muted-foreground" />
 			</div>
-			<p class="mt-1 text-2xl font-bold">{data.summary.dueCount}</p>
+			<p class="mt-1 font-mono text-2xl font-semibold tracking-tight">{data.summary.dueCount}</p>
 			<p class="text-xs text-muted-foreground">cards the scheduler wants back</p>
 		</Card>
 		<Card class="p-4">
@@ -109,7 +109,7 @@
 				<p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Top of board</p>
 				<Trophy class="size-4 text-amber-500" />
 			</div>
-			<p class="mt-1 text-2xl font-bold">{data.leader ? `${data.leader.avatar} ${Math.round(data.leader.accuracy * 100)}%` : '—'}</p>
+			<p class="mt-1 font-mono text-2xl font-semibold tracking-tight">{data.leader ? `${data.leader.avatar} ${Math.round(data.leader.accuracy * 100)}%` : '—'}</p>
 			<p class="text-xs text-muted-foreground">{data.leader?.name === data.user.name ? 'That is you.' : `${data.leader?.name ?? '—'} leads`}</p>
 		</Card>
 	</div>

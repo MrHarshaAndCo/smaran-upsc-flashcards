@@ -36,7 +36,7 @@
 	<div>
 		<div class="flex items-center gap-2">
 			<Users class="size-5 text-primary" />
-			<h1 class="text-3xl font-bold tracking-tight">Colab</h1>
+			<h1 class="font-display text-3xl font-semibold tracking-tight">Colab</h1>
 		</div>
 		<p class="mt-1 max-w-xl text-muted-foreground">
 			How you stack up against the whole room — and anyone in it. Pick a student, see the

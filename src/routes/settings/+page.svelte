@@ -72,7 +72,7 @@
 <div class="mx-auto max-w-lg space-y-8 pt-8">
 	<div>
 		<a href="/" class="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ChevronLeft class="size-4" /> Back</a>
-		<h1 class="mt-2 text-3xl font-bold tracking-tight">Settings</h1>
+		<h1 class="mt-2 font-display text-3xl font-semibold tracking-tight">Settings</h1>
 		<p class="mt-1 text-muted-foreground">Your account details and security.</p>
 	</div>
 

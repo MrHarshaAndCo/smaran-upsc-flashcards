@@ -130,20 +130,20 @@
 <div class="space-y-5">
 	{#if done}
 		<div class="space-y-4 pt-4 text-center">
-			<h1 class="text-5xl font-bold tracking-tight">{Math.round((correctCount / round.length) * 100)}%</h1>
+			<h1 class="font-display text-6xl font-semibold tracking-tight">{Math.round((correctCount / round.length) * 100)}%</h1>
 			<p class="text-muted-foreground">{correctCount} of {round.length} correct</p>
 			<div class="grid grid-cols-2 gap-3"><Stat label="Correct" value={correctCount} /><Stat label="Missed" value={round.length - correctCount} /></div>
 			<div class="flex flex-wrap justify-center gap-3 pt-2"><Button onclick={restart}>New round</Button><Button variant="outline" onclick={() => goto('/quiz')}>All quizzes</Button><Button variant="ghost" onclick={() => goto('/dashboard')}>Dashboard</Button></div>
 		</div>
 	{:else}
 		<div class="flex items-center justify-between">
-			<div><p class="text-sm font-medium text-primary">{emoji} {title}</p><p class="text-xs text-muted-foreground">{round.length} random questions · swipe or tap</p></div>
-			<div class="text-right"><p class="text-2xl font-bold">{correctCount}<span class="text-base font-normal text-muted-foreground">/{results.length}</span></p><p class="text-xs text-muted-foreground">correct</p></div>
+			<div><p class="font-mono text-xs font-medium text-primary">{emoji} {title}</p><p class="text-xs text-muted-foreground">{round.length} random questions · swipe or tap</p></div>
+			<div class="text-right"><p class="font-mono text-2xl font-semibold tracking-tight">{correctCount}<span class="text-base font-normal text-muted-foreground">/{results.length}</span></p><p class="text-xs text-muted-foreground">correct</p></div>
 		</div>
 		<div class="h-1.5 w-full overflow-hidden rounded-full bg-muted"><div class="h-full rounded-full bg-primary transition-all duration-300" style={`width: ${progressPct}%`} /></div>
 
 		<Card class="touch-none select-none p-6" style={dragging ? `transform: translateX(${dx}px) rotate(${dx / 24}deg)` : 'transition: transform 200ms ease'} onpointerdown={onPointerDown} onpointermove={onPointerMove} onpointerup={onPointerUp} onpointerleave={onPointerUp} onpointercancel={onPointerUp}>
-			<div class="mb-3 flex items-center justify-between text-xs text-muted-foreground"><span>{idx + 1} / {round.length}</span><span class="rounded bg-muted px-2 py-0.5">{emoji}{#if current.sourceQuiz} · {current.sourceQuiz}{/if}</span></div>
+			<div class="mb-3 flex items-center justify-between text-xs text-muted-foreground"><span class="font-mono">{idx + 1} / {round.length}</span><span class="rounded bg-muted px-2 py-0.5 font-mono">{emoji}{#if current.sourceQuiz} · {current.sourceQuiz}{/if}</span></div>
 			<h2 class="text-xl font-semibold leading-relaxed">{current.question}</h2>
 			{#if reveal && wrongPick === null}<p class="mt-4 text-sm font-medium text-green-700">✓ {current.options[current.correctIndex]}</p>{/if}
 		</Card>

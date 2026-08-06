@@ -28,9 +28,10 @@
 
 {#if !data.user && !isAuthPage}
 	<div class="flex min-h-screen items-center justify-center bg-muted/40 p-4">
-		<Card class="w-full max-w-sm">
+		<Card class="w-full max-w-sm border-t-2 border-t-primary">
 			<CardHeader class="text-center">
-				<CardTitle class="text-2xl">The Makkhali Project</CardTitle>
+				<p class="eyebrow text-primary">The Makkhali Project</p>
+				<CardTitle class="font-display text-3xl font-semibold tracking-tight">Your answer sheet.</CardTitle>
 				<CardDescription>UPSC flashcards with spaced repetition, quizzes and a nemesis system. Log in or create an account — your progress is saved.</CardDescription>
 			</CardHeader>
 			<CardContent class="flex flex-col gap-2">
@@ -45,11 +46,11 @@
 {:else}
 	<header class="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
 		<div class="mx-auto flex h-14 max-w-5xl items-center gap-4 px-4">
-			<a href="/" class="flex items-center gap-2 font-bold text-lg">
-				<span class="text-primary">Makkhali</span>
-				<span class="hidden sm:inline text-xs text-muted-foreground font-normal">UPSC</span>
+			<a href="/" class="flex items-baseline gap-2">
+				<span class="font-display text-xl font-bold tracking-tight">Makkhali</span>
+				<span class="eyebrow hidden text-muted-foreground sm:inline">UPSC</span>
 			</a>
-			<nav class="hidden md:flex items-center gap-1 ml-2">
+			<nav class="hidden items-center gap-1 md:flex ml-2">
 				{#each links as link}
 					<a href={link.href} class="inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors {active(link.href) ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}">
 						<link.icon class="size-4" /> {link.label}
@@ -58,7 +59,7 @@
 			</nav>
 			<div class="flex-1" />
 			<div class="flex items-center gap-1 text-sm">
-				<span class="font-medium">{data.user.name}</span>
+				<span class="hidden max-w-28 truncate font-medium sm:inline">{data.user.name}</span>
 				<a href="/settings" class="inline-flex items-center rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground" title="Settings" aria-label="Settings"><Settings class="size-4" /></a>
 				<button onclick={logout} class="inline-flex items-center rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground" title="Log out" aria-label="Log out"><LogOut class="size-4" /></button>
 			</div>
@@ -78,10 +79,10 @@
 		</div>
 	</nav>
 
-	<footer class="hidden md:block border-t mt-12">
+	<footer class="hidden border-t md:block mt-12">
 		<div class="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 text-xs text-muted-foreground">
-			<span>The Makkhali Project</span>
-			<span>Miss a card, and your rival notices.</span>
+			<span class="font-display font-semibold">The Makkhali Project</span>
+			<span class="font-mono">Miss a card, and your rival notices.</span>
 		</div>
 	</footer>
 {/if}

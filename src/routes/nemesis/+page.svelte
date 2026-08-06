@@ -11,7 +11,7 @@
 <div class="mx-auto max-w-3xl space-y-10 pt-8">
 	{#if !data.nemesis}
 		<div class="py-16 text-center">
-			<h1 class="text-3xl font-bold tracking-tight">No rival yet</h1>
+			<h1 class="font-display text-3xl font-semibold tracking-tight">No rival yet</h1>
 			<p class="mx-auto mt-2 max-w-md text-muted-foreground">
 				Smaran pairs you with the student whose accuracy is closest to yours — the person
 				worth beating. Review a few cards and a rival will be assigned.
@@ -22,7 +22,7 @@
 		<div>
 			<div class="flex items-center gap-2">
 				<Swords class="size-5 text-primary" />
-				<h1 class="text-3xl font-bold tracking-tight">The rivalry</h1>
+				<h1 class="font-display text-3xl font-semibold tracking-tight">The rivalry</h1>
 			</div>
 		</div>
 
