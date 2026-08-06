@@ -1,4 +1,5 @@
 <script>
+	import '../app.css';
 	import { page } from '$app/state';
 	import { invalidateAll } from '$app/navigation';
 	import { Toaster } from 'svelte-sonner';
