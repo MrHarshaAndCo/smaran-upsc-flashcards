@@ -21,7 +21,7 @@ export async function load({ cookies }) {
 
 	// Room average accuracy per deck (for the radar chart overlay).
 	const roomDeckAccuracy = {};
-	for (const d of summary.perDeck) {
+	const roomPromises = summary.perDeck.map(async (d) => {
 		const peerStats = await store.getPeerStats(d.deckId);
 		let correct = 0;
 		let total = 0;
@@ -29,7 +29,10 @@ export async function load({ cookies }) {
 			correct += s.correctCount;
 			total += s.totalCount;
 		}
-		roomDeckAccuracy[d.deckId] = total === 0 ? null : correct / total;
+		return { deckId: d.deckId, rate: total === 0 ? null : correct / total };
+	});
+	for (const r of await Promise.all(roomPromises)) {
+		roomDeckAccuracy[r.deckId] = r.rate;
 	}
 
 	const quizTitles = new Map(QUIZZES.map((q) => [q.id, q]));

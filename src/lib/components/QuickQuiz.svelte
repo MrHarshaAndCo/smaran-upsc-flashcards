@@ -5,7 +5,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Card } from '$lib/components/ui/card';
 	import { seededShuffle } from '$lib/engine/shuffle.js';
-	import { missToast } from '$lib/engine/nemesisToast.js';
+	import { missToast, roast } from '$lib/engine/nemesisToast.js';
 	import { shouldUseAi } from '$lib/engine/aiCoach.js';
 
 	let {
@@ -91,6 +91,17 @@
 		advance(knew ? 450 : 1600);
 	}
 
+	/** "I don't know" — reveal the answer, counts as a miss. */
+	function revealAnswer() {
+		if (advancing || done) return;
+		const q = current;
+		results.push({ questionId: q.id, chosen: null, correct: false, ms: Date.now() - startedAt });
+		wrongPick = null;
+		reveal = true;
+		notifyMiss(q, false);
+		advance(1600);
+	}
+
 	function advance(delay) {
 		advancing = true;
 		advanceTimer = setTimeout(() => {
@@ -110,6 +121,29 @@
 		posting = true;
 		const correct = results.filter((r) => r.correct).length;
 		const total = results.length;
+
+		// Nemesis roast for the summary card.
+		const nemesisTotals = (() => {
+			if (!nemesisStats) return null;
+			let nc = 0;
+			let nt = 0;
+			for (const s of Object.values(nemesisStats)) {
+				nc += s.correctCount;
+				nt += s.totalCount;
+			}
+			return nt > 0 ? { nc, nt } : null;
+		})();
+		const beatNemesis =
+			nemesisTotals !== null && total > 0 && correct / total > nemesisTotals.nc / nemesisTotals.nt;
+		const roastLine = roast({
+			nemesisName: nemesisName ?? 'your rival',
+			missCount: [...misses.values()].reduce((a, b) => a + b, 0),
+			sessionScore: correct,
+			sessionTotal: total,
+			beatNemesis
+		});
+		if (beatNemesis === false) toast.info(roastLine, { duration: 6000 });
+
 		try {
 			await fetch('/api/quiz', {
 				method: 'POST',
@@ -234,7 +268,7 @@
 		>
 			<div class="mb-3 flex items-center justify-between text-xs text-muted-foreground">
 				<span>{idx + 1} / {round.length}</span>
-				<span class="rounded bg-muted px-2 py-0.5">{emoji}</span>
+				<span class="rounded bg-muted px-2 py-0.5">{emoji}{#if current.sourceQuiz} · {current.sourceQuiz}{/if}</span>
 			</div>
 			<h2 class="text-xl font-semibold leading-relaxed">{current.question}</h2>
 			{#if reveal && wrongPick === null}
@@ -253,6 +287,15 @@
 					<span>{option}</span>
 				</button>
 			{/each}
+			{#if !reveal}
+				<button
+					onclick={revealAnswer}
+					disabled={advancing}
+					class="flex items-center justify-center gap-2 rounded-xl border border-dashed px-4 py-3 text-sm text-muted-foreground hover:bg-muted"
+				>
+					I don't know — reveal it
+				</button>
+			{/if}
 		</div>
 	{/if}
 </div>

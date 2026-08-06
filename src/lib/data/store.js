@@ -15,6 +15,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { DECKS } from './content.js';
 import { applyRating, initialCardState } from '../engine/scheduler.js';
 import { selectNemesis } from '../engine/nemesis.js';
+import { hashPassword, verifyPassword } from '../auth.js';
 
 /**
  * Load DATABASE_URL from .env at runtime unless the environment already sets
@@ -165,12 +166,45 @@ class MockStore {
 		return this.users.get(userId) ?? null;
 	}
 
-	async createUser(name) {
+	async createUser(name, credentials) {
 		const id = `u-${crypto.randomUUID()}`;
-		const user = { id, name: name.trim().slice(0, 24) || 'Aspirant', avatar: '📘', createdAt: Date.now() };
+		let email = null;
+		let passwordHash = null;
+		let passwordSalt = null;
+		if (credentials?.password) {
+			const { salt, hash } = await hashPassword(credentials.password);
+			email = credentials.email ?? null;
+			passwordHash = hash;
+			passwordSalt = salt;
+		}
+		const user = {
+			id,
+			name: name.trim().slice(0, 24) || 'Aspirant',
+			avatar: '📘',
+			createdAt: Date.now(),
+			email,
+			passwordHash,
+			passwordSalt
+		};
 		this.users.set(id, user);
 		this.reviewsByUser.set(id, []);
 		return user;
+	}
+
+	async findUserByEmail(email) {
+		const needle = email?.trim().toLowerCase();
+		if (!needle) return null;
+		for (const u of this.users.values()) {
+			if (u.email && u.email.toLowerCase() === needle) return u;
+		}
+		return null;
+	}
+
+	async verifyCredentials(email, password) {
+		const user = await this.findUserByEmail(email);
+		if (!user || !user.passwordHash || !user.passwordSalt) return null;
+		const ok = await verifyPassword(password, user.passwordSalt, user.passwordHash);
+		return ok ? user : null;
 	}
 
 	async listUsers() {
@@ -450,6 +484,10 @@ const SCHEMA_STATEMENTS = [
 	  id text primary key, name text not null, avatar text not null,
 	  created_at bigint not null
 	)`,
+	'ALTER TABLE users ADD COLUMN IF NOT EXISTS email text',
+	'ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash text',
+	'ALTER TABLE users ADD COLUMN IF NOT EXISTS password_salt text',
+	'CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users (email) WHERE email IS NOT NULL',
 	`CREATE TABLE IF NOT EXISTS decks (
 	  id text primary key, title text not null, subtitle text not null,
 	  emoji text not null, color text not null, blurb text not null,
@@ -539,15 +577,40 @@ class NeonStore {
 		return rows[0] ?? null;
 	}
 
-	async createUser(name) {
+	async createUser(name, credentials) {
 		const id = `u-${crypto.randomUUID()}`;
-		await this.sql('INSERT INTO users (id, name, avatar, created_at) VALUES ($1,$2,$3,$4)', [
-			id,
-			name.trim().slice(0, 24) || 'Aspirant',
-			'📘',
-			Date.now()
-		]);
-		return { id, name, avatar: '📘', createdAt: Date.now() };
+		let email = null;
+		let passwordHash = null;
+		let passwordSalt = null;
+		if (credentials?.password) {
+			const { salt, hash } = await hashPassword(credentials.password);
+			email = credentials.email ?? null;
+			passwordHash = hash;
+			passwordSalt = salt;
+		}
+		await this.sql(
+			'INSERT INTO users (id, name, avatar, created_at, email, password_hash, password_salt) VALUES ($1,$2,$3,$4,$5,$6,$7)',
+			[id, name.trim().slice(0, 24) || 'Aspirant', '📘', Date.now(), email, passwordHash, passwordSalt]
+		);
+		return { id, name, avatar: '📘', createdAt: Date.now(), email };
+	}
+
+	async findUserByEmail(email) {
+		const needle = email?.trim().toLowerCase();
+		if (!needle) return null;
+		const rows = await this.sql(
+			'SELECT id, name, avatar, created_at AS "createdAt", email, password_hash AS "passwordHash", password_salt AS "passwordSalt" FROM users WHERE lower(email) = $1',
+			[needle]
+		);
+		return rows[0] ?? null;
+	}
+
+	async verifyCredentials(email, password) {
+		const user = await this.findUserByEmail(email);
+		if (!user || !user.passwordHash || !user.passwordSalt) return null;
+		const ok = await verifyPassword(password, user.passwordSalt, user.passwordHash);
+		if (!ok) return null;
+		return { id: user.id, name: user.name, avatar: user.avatar, createdAt: user.createdAt };
 	}
 
 	async listUsers() {
@@ -914,7 +977,9 @@ export function _resetStore() {
  * @property {(id: string) => Promise<Deck|null>} getDeck
  * @property {(deckId: string) => Promise<Card[]>} getCards
  * @property {(userId: string) => Promise<User|null>} getUser
- * @property {(name: string) => Promise<User>} createUser
+ * @property {(name: string, credentials?: { email?: string, password?: string }) => Promise<User>} createUser
+ * @property {(email: string) => Promise<User|null>} findUserByEmail
+ * @property {(email: string, password: string) => Promise<User|null>} verifyCredentials
  * @property {() => Promise<User[]>} listUsers
  * @property {(userId: string) => Promise<Map<string, CardState>>} getCardStates
  * @property {(userId: string, cardId: string) => Promise<CardState|null>} getCardState

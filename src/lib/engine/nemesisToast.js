@@ -71,3 +71,38 @@ export function rivalReport({ myCorrect, myTotal, theirCorrect, theirTotal, neme
 	}
 	return `Dead even with ${nemesisName}. The next session decides who blinks.`;
 }
+
+/**
+ * Friendly roast — the nemesis teasing the user, never mean. Deterministic:
+ * which line is picked depends on the actual numbers.
+ *
+ * @param {object} args
+ * @param {string} args.nemesisName
+ * @param {number} args.missCount        consecutive/same-item misses this session
+ * @param {number} args.sessionScore
+ * @param {number} args.sessionTotal
+ * @param {boolean} args.beatNemesis     did the user beat the nemesis this session
+ * @returns {string}
+ */
+export function roast({ nemesisName, missCount, sessionScore, sessionTotal, beatNemesis }) {
+	if (beatNemesis) {
+		return `${nemesisName} will pretend that session never happened.`;
+	}
+	if (missCount >= 3) {
+		const lines = [
+			`${nemesisName} is literally keeping count of your misses. Third one today.`,
+			`Three misses in one session — ${nemesisName} calls that "generous".`,
+			`Your nemesis has missed fewer things in their whole life than you did just now.`
+		];
+		return lines[missCount % lines.length];
+	}
+	if (sessionTotal > 0 && sessionScore / sessionTotal < 0.5) {
+		const lines = [
+			`${sessionScore}/${sessionTotal}? ${nemesisName} did better in their warm-up.`,
+			`Careful — ${nemesisName} might start feeling bad for you.`,
+			`${nemesisName} saw that score and smiled. Unsettling, right?`
+		];
+		return lines[(missCount * 7 + 1) % lines.length];
+	}
+	return `${nemesisName} is watching. That alone should be enough motivation.`;
+}

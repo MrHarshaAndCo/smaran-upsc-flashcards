@@ -1,37 +1,16 @@
 <script>
-	import '../app.css';
 	import { page } from '$app/state';
 	import { invalidateAll } from '$app/navigation';
-	import { PenLine, BookOpen, LayoutDashboard, Trophy, Swords, Users } from 'lucide-svelte';
+	import { PenLine, BookOpen, LayoutDashboard, Trophy, Swords, Users, LogOut } from 'lucide-svelte';
 	import { Toaster } from 'svelte-sonner';
 	import { Button } from '$lib/components/ui/button';
-	import { Input } from '$lib/components/ui/input';
 	import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '$lib/components/ui/card';
 
 	let { data, children } = $props();
 
-	let name = $state('');
-	let busy = $state(false);
-	let error = $state('');
-
-	async function signIn(e) {
-		e.preventDefault();
-		const n = name.trim();
-		if (!n || busy) return;
-		busy = true;
-		error = '';
-		try {
-			const r = await fetch('/api/user', {
-				method: 'POST',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ name: n })
-			});
-			if (!r.ok) throw new Error();
-			await invalidateAll();
-		} catch {
-			error = 'Something went wrong. Try again.';
-		}
-		busy = false;
+	async function logout() {
+		await fetch('/api/logout', { method: 'POST' });
+		await invalidateAll();
 	}
 
 	const links = [
@@ -48,30 +27,23 @@
 </script>
 
 {#if !data.user}
-	<!-- Auth gate — mandatory, full screen -->
-	<Toaster position="top-center" richColors />
+	<!-- Auth gate -->
 	<div class="flex min-h-screen items-center justify-center bg-muted/40 p-4">
 		<Card class="w-full max-w-sm">
 			<CardHeader class="text-center">
 				<CardTitle class="text-2xl">The Makkhali Project</CardTitle>
-				<CardDescription>UPSC flashcards with spaced repetition. Enter your name to start — no password needed.</CardDescription>
+				<CardDescription>
+					UPSC flashcards with spaced repetition, quizzes and a nemesis system. Log in or create an
+					account — your progress is saved.
+				</CardDescription>
 			</CardHeader>
-			<CardContent>
-				<form onsubmit={signIn} class="flex flex-col gap-3">
-					<Input
-						placeholder="Your name"
-						bind:value={name}
-						maxlength="24"
-						autocomplete="name"
-						class="text-center"
-					/>
-					<Button type="submit" disabled={busy || !name.trim()} class="w-full">
-						{busy ? 'Signing in…' : 'Start studying'}
-					</Button>
-					{#if error}
-						<p class="text-sm text-destructive text-center">{error}</p>
-					{/if}
-				</form>
+			<CardContent class="flex flex-col gap-2">
+				<a href="/login" class="w-full">
+					<Button class="w-full" size="lg">Log in</Button>
+				</a>
+				<a href="/register" class="w-full">
+					<Button variant="outline" size="lg" class="w-full">Create an account</Button>
+				</a>
 			</CardContent>
 		</Card>
 	</div>
@@ -95,6 +67,9 @@
 			<div class="flex items-center gap-2 text-sm">
 				<span class="font-medium">{data.user.name}</span>
 				<span>{data.user.avatar}</span>
+				<button onclick={logout} class="inline-flex items-center rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground" title="Log out" aria-label="Log out">
+					<LogOut class="size-4" />
+				</button>
 			</div>
 		</div>
 	</header>

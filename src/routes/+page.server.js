@@ -4,9 +4,11 @@ import { QUIZZES, quickQuizPool } from '$lib/data/quizzes.js';
 export async function load({ cookies }) {
 	const store = await getStore();
 	const userId = cookies.get('smaran_u');
-	const [summary, nemesis] = await Promise.all([
+	const [summary, nemesis, user, decks] = await Promise.all([
 		store.getUserSummary(userId),
-		store.findNemesis(userId)
+		store.findNemesis(userId),
+		userId ? store.getUser(userId) : null,
+		store.getDecks()
 	]);
 
 	// Nemesis per-question stats across the whole merged pool, for the
@@ -26,7 +28,7 @@ export async function load({ cookies }) {
 		nemesis,
 		nemesisStats,
 		nemesisName: nemesis?.name ?? null,
-		userName: summary ? (await store.getUser(userId))?.name ?? 'Aspirant' : 'Aspirant',
-		decks: await store.getDecks()
+		userName: user?.name ?? 'Aspirant',
+		decks
 	};
 }
