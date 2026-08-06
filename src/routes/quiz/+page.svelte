@@ -69,7 +69,7 @@
 
 <div class="mx-auto max-w-2xl space-y-6 pt-6">
 	<header class="border-b border-border pb-5">
-		<p class="eyebrow text-primary">Question bank · {questionTotal.toLocaleString('en-IN')} questions</p>
+		<p class="eyebrow text-muted-foreground">{subject === 'all' ? 'GENERAL STUDIES' : subject.toUpperCase()} · {questionTotal.toLocaleString('en-IN')} questions</p>
 		<h1 class="font-display mt-1.5 text-3xl font-semibold tracking-tight">Quiz</h1>
 		<p class="mt-1 text-sm text-muted-foreground">50 fresh questions every visit — pick a subject or stay mixed.</p>
 	</header>
@@ -102,7 +102,7 @@
 	{:else}
 		<div class="flex items-center justify-between">
 			<p class="font-mono text-xs font-medium text-primary">{session.quiz.emoji} {session.quiz.title}</p>
-			<p class="font-mono text-sm text-muted-foreground">Q {session.idx + 1} / {session.questions.length}</p>
+			<p class="font-mono text-sm text-muted-foreground"><span class="omr-bubble">Q {session.idx + 1}</span> / {session.questions.length}</p>
 		</div>
 		<Progress value={session.idx} max={session.questions.length} />
 		<Card>

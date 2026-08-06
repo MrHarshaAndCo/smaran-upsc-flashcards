@@ -121,7 +121,7 @@
 		<div class="h-1.5 w-full overflow-hidden rounded-full bg-muted"><div class="h-full rounded-full bg-primary transition-all duration-300" style={`width: ${progressPct}%`} /></div>
 
 		<Card class="p-6">
-			<div class="mb-3 flex items-center justify-between text-xs text-muted-foreground"><span class="font-mono">{idx + 1} / {round.length}</span><span class="rounded bg-muted px-2 py-0.5 font-mono">{emoji}{#if current.sourceQuiz} · {current.sourceQuiz}{/if}</span></div>
+			<div class="mb-3 flex items-center justify-between text-xs text-muted-foreground"><span class="font-mono omr-bubble">{idx + 1}<span class="font-mono"> / {round.length}</span></span><span class="rounded bg-muted px-2 py-0.5 font-mono">{emoji}{#if current.sourceQuiz} · {current.sourceQuiz}{/if}</span></div>
 			<h2 class="text-xl font-semibold leading-relaxed">{current.question}</h2>
 			{#if reveal && wrongPick === null}<p class="mt-4 text-sm font-medium text-green-700">✓ {current.options[current.correctIndex]}</p>{/if}
 		</Card>

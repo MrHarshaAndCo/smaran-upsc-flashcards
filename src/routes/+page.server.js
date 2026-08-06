@@ -14,11 +14,15 @@ export async function load({ cookies }) {
 	const questionTotal = filters.reduce((a, f) => a + f.count, 0);
 
 	// Nemesis per-question stats for the quick quiz, for the nemesis-aware
-	// miss toasts. Convert the Map to a plain object for client lookups.
 	let nemesisStats = null;
+	let nemesisRecord = null;
 	if (nemesis) {
-		const map = await store.getQuizNemesisStats(userId, 'quick');
+		const [map, record] = await Promise.all([
+			store.getQuizNemesisStats(userId, 'quick'),
+			store.getNemesisRecord(userId, nemesis.userId)
+		]);
 		nemesisStats = map ? Object.fromEntries(map) : null;
+		nemesisRecord = record;
 	}
 
 	return {
@@ -31,7 +35,8 @@ export async function load({ cookies }) {
 			sourceQuiz: q.subject
 		})),
 		questionTotal,
-		summary,
+		userName: user?.name ?? 'Aspirant',
+		nemesisRecord,
 		nemesis,
 		nemesisStats,
 		nemesisName: nemesis?.name ?? null,
