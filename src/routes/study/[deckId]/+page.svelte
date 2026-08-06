@@ -55,9 +55,6 @@
 				<Card class="p-4"><p class="text-xs text-muted-foreground">Re-pass</p><p class="text-2xl font-bold">{session.repass ? 'Done' : 'None'}</p></Card>
 			</div>
 			<FeedbackPanel items={[session.summary.advice]} />
-			{#if session.summary.aiCoach}
-				<FeedbackPanel items={[{ tone: 'bad', title: 'Coach', body: session.summary.aiCoach }]} />
-			{/if}
 			{#if session.summary.nemesisNote}
 				<FeedbackPanel items={[{ tone: 'neutral', title: 'Rival report', body: session.summary.nemesisNote }]} />
 			{/if}

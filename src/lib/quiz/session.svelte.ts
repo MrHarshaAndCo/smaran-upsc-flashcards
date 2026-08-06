@@ -1,7 +1,6 @@
 import { peerFeedback } from '../engine/feedback.js';
 import { h2hRecord } from '../engine/nemesis.js';
-import { missToast } from '../engine/nemesisToast.js';
-import { shouldUseAi } from '../engine/aiCoach.js';
+import { missToast, rivalReport } from '../engine/nemesisToast.js';
 
 /**
  * Deliberate quiz session state (select → check → next) for the
@@ -108,13 +107,7 @@ export class QuizSession {
 				nc += s.correctCount;
 				nt += s.totalCount;
 			}
-			const r = h2hRecord({ myCorrect: correct, myTotal: total, theirCorrect: nc, theirTotal: nt });
-			rivalNote =
-				r.outcome === 'win'
-					? `You beat ${this.nemesisName} on this quiz — ${Math.round(r.myRate * 100)}% vs their ${Math.round(r.theirRate * 100)}%.`
-					: r.outcome === 'loss'
-						? `${this.nemesisName} scored better on this quiz — their ${Math.round(r.theirRate * 100)}% beats your ${Math.round(r.myRate * 100)}%. Rematch.`
-						: `Dead even with ${this.nemesisName} on this quiz. The next one decides.`;
+			rivalNote = rivalReport({ nemesisName: this.nemesisName, myCorrect: correct, myTotal: total, theirCorrect: nc, theirTotal: nt });
 		}
 
 		const rate = total === 0 ? 0 : correct / total;
@@ -153,28 +146,6 @@ export class QuizSession {
 			// Best-effort
 		}
 
-		// AI coach for a rough pass.
-		if (shouldUseAi(correct, total)) {
-			try {
-				const r = await fetch('/api/ai-feedback', {
-					method: 'POST',
-					headers: { 'content-type': 'application/json' },
-					body: JSON.stringify({
-						score: correct,
-						total,
-						name: this.userName,
-						items: this.results.map((res) => {
-							const q = this.questions.find((qq) => qq.id === res.questionId);
-							return { question: q?.question ?? '', correct: res.correct };
-						})
-					})
-				});
-				const j = await r.json();
-				if (j.ai) this.summary.aiCoach = j.message;
-			} catch {
-				// Coach is optional
-			}
-		}
 		this.posting = false;
 	}
 

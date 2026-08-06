@@ -5,8 +5,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Card } from '$lib/components/ui/card';
 	import { seededShuffle } from '$lib/engine/shuffle.js';
-	import { missToast, roast } from '$lib/engine/nemesisToast.js';
-	import { shouldUseAi } from '$lib/engine/aiCoach.js';
+	import { missToast, nemesisVerdict } from '$lib/engine/nemesisToast.js';
 
 	let {
 		questions, quizId, emoji = '📝', title = 'Quick Quiz', perRound = 10,
@@ -83,16 +82,12 @@
 			}
 		}
 		try {
-			const r = await fetch('/api/quiz', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ quizId, startedAt, endedAt: Date.now(), results: results.map(r => ({ questionId: r.questionId, correct: r.correct, ms: r.ms })), nemesis: nemesisPayload }) });
-			const j = await r.json();
-			if (j.roast) toast(j.roast, { duration: 8000 });
+			await fetch('/api/quiz', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ quizId, startedAt, endedAt: Date.now(), results: results.map(r => ({ questionId: r.questionId, correct: r.correct, ms: r.ms })), nemesis: nemesisPayload }) });
 		} catch {}
-		if (shouldUseAi(correct, total)) {
-			try {
-				const r = await fetch('/api/ai-feedback', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ score: correct, total, name: userName, items: results.map(res => { const q = questions.find(qq => qq.id === res.questionId); return { question: q?.question ?? '', correct: res.correct }; }) }) });
-				const j = await r.json();
-				if (j.ai) toast('Coach', { description: j.message, duration: 8000 });
-			} catch {}
+		// Local nemesis verdict — computed from the actual duel data, no API call.
+		if (nemesisPayload && nemesisName) {
+			const v = nemesisVerdict({ nemesisName, myScore: correct, myTotal: total, theirScore: +(nemesisPayload.theirCorrect), theirTotal: +(nemesisPayload.theirTotal), record: null });
+			toast(v.title, { description: v.body, duration: 8000 });
 		}
 		posting = false;
 	}

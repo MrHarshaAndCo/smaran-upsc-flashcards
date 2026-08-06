@@ -1,8 +1,7 @@
 import { applyRating, initialCardState, DAY_MS } from '../engine/scheduler.js';
 import { memoryFeedback, peerFeedback, sessionAdvice } from '../engine/feedback.js';
 import { h2hRecord } from '../engine/nemesis.js';
-import { missToast } from '../engine/nemesisToast.js';
-import { shouldUseAi } from '../engine/aiCoach.js';
+import { missToast, rivalReport } from '../engine/nemesisToast.js';
 import { seededShuffle } from '../engine/shuffle.js';
 
 /**
@@ -27,6 +26,7 @@ export class StudySession {
 	misses = $state(new Map());
 	requeue = $state([]);
 	repass = $state(false);
+	repassLevel = 0;
 	done = $state(false);
 	posting = $state(false);
 	/** @type {Map<string, any>} */
@@ -144,11 +144,12 @@ export class StudySession {
 			this.rated = false;
 			this.feedbacks = [];
 			this.cardShownAt = Date.now();
-		} else if (this.requeue.length > 0) {
+		} else if (this.requeue.length > 0 && this.repassLevel < 3) {
 			this.queue = this.requeue;
 			this.requeue = [];
 			this.idx = 0;
 			this.repass = true;
+			this.repassLevel++;
 			this.flipped = false;
 			this.rated = false;
 			this.feedbacks = [];
@@ -177,13 +178,7 @@ export class StudySession {
 				nc += s.correctCount;
 				nt += s.totalCount;
 			}
-			const r = h2hRecord({ myCorrect: correct, myTotal: total, theirCorrect: nc, theirTotal: nt });
-			nemesisNote =
-				r.outcome === 'win'
-					? `You beat ${this.nemesisName} this session — ${Math.round(r.myRate * 100)}% vs their ${Math.round(r.theirRate * 100)}%.`
-					: r.outcome === 'loss'
-						? `${this.nemesisName} still owns this deck — their ${Math.round(r.theirRate * 100)}% beats your ${Math.round(r.myRate * 100)}%. Next pass fixes that.`
-						: `Dead even with ${this.nemesisName} this time. The next session decides.`;
+			nemesisNote = rivalReport({ nemesisName: this.nemesisName, myCorrect: correct, myTotal: total, theirCorrect: nc, theirTotal: nt });
 		}
 
 		this.summary = { total, correct, lapses, missedCards, advice, nemesisNote };
@@ -214,28 +209,6 @@ export class StudySession {
 			// Best-effort
 		}
 
-		// AI coach for a rough pass.
-		if (shouldUseAi(correct, total)) {
-			try {
-				const r = await fetch('/api/ai-feedback', {
-					method: 'POST',
-					headers: { 'content-type': 'application/json' },
-					body: JSON.stringify({
-						score: correct,
-						total,
-						name: this.userName,
-						items: this.results.map((res) => {
-							const card = this.cards.find((c) => c.id === res.cardId);
-							return { question: card?.front ?? '', correct: res.rating !== 'again' };
-						})
-					})
-				});
-				const j = await r.json();
-				if (j.ai) this.summary.aiCoach = j.message;
-			} catch {
-				// Coach is optional
-			}
-		}
 		this.posting = false;
 	}
 
@@ -248,6 +221,7 @@ export class StudySession {
 		this.results = [];
 		this.requeue = [];
 		this.repass = false;
+		this.repassLevel = 0;
 		this.done = false;
 		this.summary = null;
 		this.states = new Map();
