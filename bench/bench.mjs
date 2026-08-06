@@ -16,7 +16,7 @@ import { DECKS } from '../src/lib/data/content.js';
 import { applyRating, initialCardState } from '../src/lib/engine/scheduler.js';
 import { memoryFeedback, peerFeedback } from '../src/lib/engine/feedback.js';
 import { selectNemesis, tauntFor } from '../src/lib/engine/nemesis.js';
-import { mulberry32 } from '../src/lib/data/demo.js';
+import { mulberry32 } from '../src/lib/engine/random.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DAY_MS = 86_400_000;

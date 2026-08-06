@@ -1,5 +1,6 @@
 <script>
 	import { page } from '$app/state';
+	import { Users } from 'lucide-svelte';
 
 	let { entries = [], limit = 0, highlight = null, deckTitle = '' } = $props();
 	const shown = $derived(limit > 0 ? entries.slice(0, limit) : entries);
@@ -20,6 +21,7 @@
 					<th class="px-4 py-2.5 font-medium">Accuracy</th>
 					<th class="px-4 py-2.5 font-medium">Reviews</th>
 					<th class="px-4 py-2.5 font-medium">Streak</th>
+					<th class="px-4 py-2.5 font-medium"></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -33,6 +35,13 @@
 						<td class="px-4 py-2.5 font-medium">{Math.round(entry.accuracy * 100)}%</td>
 						<td class="px-4 py-2.5 text-muted-foreground">{entry.reviews}</td>
 						<td class="px-4 py-2.5">{entry.streak > 0 ? `🔥 ${entry.streak}` : '—'}</td>
+						<td class="px-4 py-2.5 text-right">
+							{#if entry.userId !== meId}
+								<a href={`/colab?student=${entry.userId}`} class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground" title={`Compare with ${entry.name}`}>
+									<Users class="size-3.5" /> Compare
+								</a>
+							{/if}
+						</td>
 					</tr>
 				{/each}
 			</tbody>

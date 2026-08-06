@@ -4,14 +4,19 @@
 	import Stat from '$lib/components/Stat.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Card } from '$lib/components/ui/card';
-	import { mulberry32 } from '$lib/data/demo.js';
+	import { seededShuffle } from '$lib/engine/shuffle.js';
+	import { missToast } from '$lib/engine/nemesisToast.js';
+	import { shouldUseAi } from '$lib/engine/aiCoach.js';
 
 	let {
 		questions,
 		quizId,
 		emoji = '📝',
 		title = 'Quick Quiz',
-		perRound = 10
+		perRound = 10,
+		nemesisStats = null,
+		nemesisName = null,
+		userName = 'Aspirant'
 	} = $props();
 
 	const letters = ['A', 'B', 'C', 'D'];
@@ -23,6 +28,8 @@
 	let round = $state(pickRound(roundSeed));
 	let idx = $state(0);
 	let results = $state([]);
+	/** @type {Map<string, number>} questionId → miss count */
+	let misses = $state(new Map());
 	let done = $state(false);
 	let posting = $state(false);
 	let reveal = $state(false);
@@ -39,26 +46,26 @@
 	let advanceTimer;
 
 	function pickRound(seed) {
-		let h = 2166136261;
-		for (let i = 0; i < seed.length; i++) {
-			h ^= seed.charCodeAt(i);
-			h = Math.imul(h, 16777619);
-		}
-		const rand = mulberry32(h >>> 0);
-		const pool = [...questions];
-		for (let i = pool.length - 1; i > 0; i--) {
-			const j = Math.floor(rand() * (i + 1));
-			[pool[i], pool[j]] = [pool[j], pool[i]];
-		}
-		return pool.slice(0, Math.min(perRound, pool.length));
+		return seededShuffle(questions, seed).slice(0, Math.min(perRound, questions.length));
 	}
 
-	function notify(correct, optionText) {
-		if (correct) {
-			toast.success('Correct!', { description: 'Nice recall. On to the next.' });
-		} else {
-			toast.error('Not quite', { description: `The answer was: ${optionText}` });
-		}
+	function nemesisRateFor(questionId) {
+		const s = nemesisStats?.[questionId];
+		if (!s || s.totalCount === 0) return null;
+		return s.correctCount / s.totalCount;
+	}
+
+	function notifyMiss(q, correct) {
+		const count = (misses.get(q.id) ?? 0) + 1;
+		misses.set(q.id, count);
+		const data = missToast({
+			missCount: count,
+			nemesisRate: nemesisRateFor(q.id),
+			nemesisName: nemesisName ?? 'your rival',
+			correctText: q.options[q.correctIndex]
+		});
+		if (data.tone === 'error') toast.error(data.title, { description: data.body });
+		else toast.warning(data.title, { description: data.body });
 	}
 
 	function answerByOption(i) {
@@ -68,7 +75,8 @@
 		results.push({ questionId: q.id, chosen: i, correct, ms: Date.now() - startedAt });
 		if (!correct) wrongPick = i;
 		reveal = true;
-		notify(correct, q.options[q.correctIndex]);
+		if (correct) toast.success('Correct!', { description: 'Nice recall. On to the next.' });
+		else notifyMiss(q, correct);
 		advance(correct ? 450 : 1600);
 	}
 
@@ -78,7 +86,8 @@
 		results.push({ questionId: q.id, chosen: null, correct: knew, ms: Date.now() - startedAt });
 		wrongPick = null;
 		reveal = true;
-		notify(knew, q.options[q.correctIndex]);
+		if (knew) toast.success('Correct!', { description: 'Nice recall. On to the next.' });
+		else notifyMiss(q, knew);
 		advance(knew ? 450 : 1600);
 	}
 
@@ -99,6 +108,8 @@
 	async function finish() {
 		done = true;
 		posting = true;
+		const correct = results.filter((r) => r.correct).length;
+		const total = results.length;
 		try {
 			await fetch('/api/quiz', {
 				method: 'POST',
@@ -113,6 +124,31 @@
 		} catch {
 			// Best-effort
 		}
+
+		// AI coach for a rough pass.
+		if (shouldUseAi(correct, total)) {
+			try {
+				const r = await fetch('/api/ai-feedback', {
+					method: 'POST',
+					headers: { 'content-type': 'application/json' },
+					body: JSON.stringify({
+						score: correct,
+						total,
+						name: userName,
+						items: results.map((res) => {
+							const q = questions.find((qq) => qq.id === res.questionId);
+							return { question: q?.question ?? '', correct: res.correct };
+						})
+					})
+				});
+				const j = await r.json();
+				if (j.ai) {
+					toast('Coach', { description: j.message, duration: 8000 });
+				}
+			} catch {
+				// Coach is optional
+			}
+		}
 		posting = false;
 	}
 
@@ -121,6 +157,7 @@
 		round = pickRound(roundSeed);
 		idx = 0;
 		results = [];
+		misses = new Map();
 		done = false;
 		reveal = false;
 		wrongPick = null;

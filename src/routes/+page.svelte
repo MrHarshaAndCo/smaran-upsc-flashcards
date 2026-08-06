@@ -22,7 +22,16 @@
 		{/if}
 	</div>
 
-	<QuickQuiz questions={data.pool} quizId="quick" emoji="⚡" title="Mixed Grand Test" perRound={10} />
+	<QuickQuiz
+		questions={data.pool}
+		quizId="quick"
+		emoji="⚡"
+		title="Mixed Grand Test"
+		perRound={10}
+		nemesisStats={data.nemesisStats}
+		nemesisName={data.nemesisName}
+		userName={data.userName}
+	/>
 
 	{#if data.nemesis}
 		<div class="flex items-center justify-between rounded-xl border bg-muted/50 px-4 py-3 text-sm">

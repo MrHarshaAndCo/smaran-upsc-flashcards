@@ -2,7 +2,7 @@
 	import '../app.css';
 	import { page } from '$app/state';
 	import { invalidateAll } from '$app/navigation';
-	import { PenLine, BookOpen, LayoutDashboard, Trophy, Swords } from 'lucide-svelte';
+	import { PenLine, BookOpen, LayoutDashboard, Trophy, Swords, Users } from 'lucide-svelte';
 	import { Toaster } from 'svelte-sonner';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
@@ -38,6 +38,7 @@
 		{ href: '/quiz', label: 'Quiz', icon: PenLine },
 		{ href: '/decks', label: 'Study', icon: BookOpen },
 		{ href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+		{ href: '/colab', label: 'Colab', icon: Users },
 		{ href: '/leaderboard', label: 'Board', icon: Trophy },
 		{ href: '/nemesis', label: 'Rival', icon: Swords }
 	];

@@ -1,5 +1,5 @@
 import { getStore } from '$lib/data/store.js';
-import { quickQuizPool } from '$lib/data/quizzes.js';
+import { QUIZZES, quickQuizPool } from '$lib/data/quizzes.js';
 
 export async function load({ cookies }) {
 	const store = await getStore();
@@ -8,10 +8,25 @@ export async function load({ cookies }) {
 		store.getUserSummary(userId),
 		store.findNemesis(userId)
 	]);
+
+	// Nemesis per-question stats across the whole merged pool, for the
+	// nemesis-aware miss toasts.
+	let nemesisStats = null;
+	if (nemesis) {
+		const parts = await Promise.all(QUIZZES.map((q) => store.getQuizNemesisStats(userId, q.id)));
+		nemesisStats = {};
+		for (const part of parts) {
+			if (part) for (const [k, v] of part) nemesisStats[k] = v;
+		}
+	}
+
 	return {
 		pool: quickQuizPool(),
 		summary,
 		nemesis,
+		nemesisStats,
+		nemesisName: nemesis?.name ?? null,
+		userName: summary ? (await store.getUser(userId))?.name ?? 'Aspirant' : 'Aspirant',
 		decks: await store.getDecks()
 	};
 }

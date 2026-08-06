@@ -1,9 +1,12 @@
 <script>
 	import { invalidateAll } from '$app/navigation';
-	import { Flame, Target, Clock3, Trophy, Swords, BookOpen, PenLine, Smartphone, ArrowRight } from 'lucide-svelte';
+	import { Flame, Target, Clock3, Trophy, Swords, BookOpen, PenLine, Smartphone } from 'lucide-svelte';
+	import ActivityList from '$lib/components/ActivityList.svelte';
 	import Leaderboard from '$lib/components/Leaderboard.svelte';
 	import NemesisDossier from '$lib/components/NemesisDossier.svelte';
 	import RadarChart from '$lib/components/RadarChart.svelte';
+	import ScoreChip from '$lib/components/ScoreChip.svelte';
+	import SectionHeader from '$lib/components/SectionHeader.svelte';
 	import Stat from '$lib/components/Stat.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Card } from '$lib/components/ui/card';
@@ -20,7 +23,6 @@
 		'art-culture': 'Culture',
 		economy: 'Economy'
 	};
-
 	const radarLabels = $derived(data.summary.perDeck.map((d) => SHORT[d.deckId] ?? d.title));
 	const radarValues = $derived(data.summary.perDeck.map((d) => (d.total === 0 ? 0 : Math.round((d.correct / d.total) * 100))));
 	const radarRoom = $derived(data.summary.perDeck.map((d) => (data.roomDeckAccuracy[d.deckId] == null ? 0 : Math.round(data.roomDeckAccuracy[d.deckId] * 100))));
@@ -54,13 +56,10 @@
 	}
 
 	const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-	function fmt(ts) {
+	const fmt = (ts) => {
 		const d = new Date(ts);
 		return `${d.getDate()} ${MONTHS[d.getMonth()]}`;
-	}
-
-	const scoreTone = (rate) => (rate >= 0.7 ? 'text-green-600' : rate >= 0.4 ? 'text-amber-600' : 'text-red-600');
+	};
 </script>
 
 <div class="space-y-8 pt-6">
@@ -118,37 +117,20 @@
 	<!-- Radar + nemesis -->
 	<div class="grid gap-6 lg:grid-cols-2">
 		<Card class="p-6">
-			<div class="mb-2 flex items-center gap-2">
-				<Target class="size-4 text-primary" />
-				<h2 class="text-lg font-bold">Subject radar</h2>
-			</div>
-			<p class="mb-4 text-xs text-muted-foreground">Your accuracy per subject vs the room average</p>
+			<SectionHeader icon={Target} title="Subject radar" />
+			<p class="-mt-2 mb-4 text-xs text-muted-foreground">Your accuracy per subject vs the room average</p>
 			<RadarChart labels={radarLabels} values={radarValues} bestValues={radarRoom} bestLabel={data.user.name} />
 		</Card>
 
 		<div class="space-y-6">
 			{#if data.nemesis}
 				<div>
-					<div class="mb-3 flex items-center justify-between">
-						<div class="flex items-center gap-2">
-							<Swords class="size-4 text-primary" />
-							<h2 class="text-lg font-bold">Your rivalry</h2>
-						</div>
-						<a href="/nemesis" class="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
-							Dossier <ArrowRight class="size-3.5" />
-						</a>
-					</div>
+					<SectionHeader icon={Swords} title="Your rivalry" actionHref="/nemesis" actionLabel="Dossier" />
 					<NemesisDossier nemesis={data.nemesis.nemesis} record={data.nemesis.record} taunt={data.nemesis.taunt} compact />
 				</div>
 			{/if}
 			<div>
-				<div class="mb-3 flex items-center justify-between">
-					<div class="flex items-center gap-2">
-						<BookOpen class="size-4 text-primary" />
-						<h2 class="text-lg font-bold">Deck by deck</h2>
-					</div>
-					<a href="/decks" class="text-xs text-muted-foreground hover:text-foreground">All decks →</a>
-				</div>
+				<SectionHeader icon={BookOpen} title="Deck by deck" actionHref="/decks" actionLabel="All decks" />
 				<Card class="divide-y">
 					{#each data.summary.perDeck as d (d.deckId)}
 						<div class="p-3.5">
@@ -169,53 +151,42 @@
 		</div>
 	</div>
 
-	<!-- Activity: sessions + quizzes -->
+	<!-- Activity -->
 	<div class="grid gap-6 lg:grid-cols-2">
 		<section>
-			<div class="mb-3 flex items-center gap-2">
-				<PenLine class="size-4 text-primary" />
-				<h2 class="text-lg font-bold">Recent quizzes</h2>
-			</div>
-			<Card class="divide-y">
-				{#if data.quizSessions.length === 0}
-					<p class="p-6 text-center text-sm text-muted-foreground">No quiz attempts yet. <a href="/quiz" class="text-primary hover:underline">Take one →</a></p>
-				{:else}
-					{#each data.quizSessions as q (q.id)}
-						<div class="flex items-center justify-between p-3.5">
-							<span class="text-sm font-medium">{data.quizTitles[q.quizId]?.emoji ?? '📝'} {data.quizTitles[q.quizId]?.title ?? q.quizId}</span>
-							<span class="text-xs text-muted-foreground">{fmt(q.endedAt)} · <span class={`font-semibold ${scoreTone(q.correct / q.total)}`}>{q.correct}/{q.total}</span></span>
-						</div>
-					{/each}
-				{/if}
-			</Card>
+			<SectionHeader icon={PenLine} title="Recent quizzes" actionHref="/quiz" actionLabel="Quiz hall" />
+			<ActivityList
+				items={data.quizSessions}
+				empty="No quiz attempts yet."
+				emptyHref="/quiz"
+				emptyLabel="Take one"
+			>
+				{#snippet children(q)}
+					<span class="text-sm font-medium">{data.quizTitles[q.quizId]?.emoji ?? '📝'} {data.quizTitles[q.quizId]?.title ?? q.quizId}</span>
+					<span class="text-xs text-muted-foreground">{fmt(q.endedAt)} · <ScoreChip correct={q.correct} total={q.total} /></span>
+				{/snippet}
+			</ActivityList>
 		</section>
 
 		<section>
-			<div class="mb-3 flex items-center gap-2">
-				<BookOpen class="size-4 text-primary" />
-				<h2 class="text-lg font-bold">Recent sessions</h2>
-			</div>
-			<Card class="divide-y">
-				{#if data.sessions.length === 0}
-					<p class="p-6 text-center text-sm text-muted-foreground">No study sessions yet. <a href="/decks" class="text-primary hover:underline">Start one →</a></p>
-				{:else}
-					{#each data.sessions as s (s.id)}
-						<div class="flex items-center justify-between p-3.5">
-							<span class="text-sm font-medium">{s.emoji} {s.deckTitle}</span>
-							<span class="text-xs text-muted-foreground">{fmt(s.endedAt)} · <span class={`font-semibold ${scoreTone(s.correct / s.total)}`}>{s.correct}/{s.total}</span></span>
-						</div>
-					{/each}
-				{/if}
-			</Card>
+			<SectionHeader icon={BookOpen} title="Recent sessions" actionHref="/decks" actionLabel="All decks" />
+			<ActivityList
+				items={data.sessions}
+				empty="No study sessions yet."
+				emptyHref="/decks"
+				emptyLabel="Start one"
+			>
+				{#snippet children(s)}
+					<span class="text-sm font-medium">{s.emoji} {s.deckTitle}</span>
+					<span class="text-xs text-muted-foreground">{fmt(s.endedAt)} · <ScoreChip correct={s.correct} total={s.total} /></span>
+				{/snippet}
+			</ActivityList>
 		</section>
 	</div>
 
 	<!-- Devices -->
 	<section>
-		<div class="mb-3 flex items-center gap-2">
-			<Smartphone class="size-4 text-primary" />
-			<h2 class="text-lg font-bold">Registered devices</h2>
-		</div>
+		<SectionHeader icon={Smartphone} title="Registered devices" />
 		<Card class="p-4">
 			<p class="mb-3 text-sm text-muted-foreground">Paste a tester's device id here so you know who is on which phone.</p>
 			<form onsubmit={registerDevice} class="flex flex-col gap-2 sm:flex-row">
@@ -244,13 +215,7 @@
 
 	<!-- Leaderboard -->
 	<section>
-		<div class="mb-3 flex items-center justify-between">
-			<div class="flex items-center gap-2">
-				<Trophy class="size-4 text-primary" />
-				<h2 class="text-lg font-bold">Leaderboard</h2>
-			</div>
-			<a href="/leaderboard" class="text-xs text-muted-foreground hover:text-foreground">Full board →</a>
-		</div>
+		<SectionHeader icon={Trophy} title="Leaderboard" actionHref="/leaderboard" actionLabel="Full board" />
 		<Leaderboard entries={data.leaderboard} highlight={data.user.id} />
 	</section>
 </div>

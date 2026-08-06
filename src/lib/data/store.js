@@ -13,7 +13,6 @@
 import { neon } from '@neondatabase/serverless';
 import { readFileSync, existsSync } from 'node:fs';
 import { DECKS } from './content.js';
-import { generateDemoHistories, DEMO_USERS } from './demo.js';
 import { applyRating, initialCardState } from '../engine/scheduler.js';
 import { selectNemesis } from '../engine/nemesis.js';
 
@@ -85,7 +84,6 @@ class MockStore {
 		this.quizAnswers = [];
 		this.quizSeq = 0;
 		this.sessionSeq = 0;
-		this.seedDemo();
 	}
 
 	async saveQuizSession({ userId, quizId, startedAt, endedAt, results }) {
@@ -145,31 +143,6 @@ class MockStore {
 			.filter((d) => d.userId === userId)
 			.sort((a, b) => b.createdAt - a.createdAt)
 			.map((d) => ({ deviceId: d.deviceId, platform: d.platform, createdAt: d.createdAt, lastSeen: d.lastSeen }));
-	}
-
-	seedDemo() {
-		const { users, reviews } = generateDemoHistories(DECKS);
-		for (const u of users) this.users.set(u.id, u);
-		const byUser = new Map();
-		for (const r of reviews) {
-			const list = byUser.get(r.userId) ?? [];
-			list.push(r);
-			byUser.set(r.userId, list);
-		}
-		for (const [uid, list] of byUser) {
-			this.reviewsByUser.set(uid, list.sort((a, b) => a.at - b.at));
-			// Rebuild card states from the review trail so due dates are sane.
-			const states = new Map();
-			for (const r of list) {
-				const key = `${uid}:${r.cardId}`;
-				const prev = states.get(key) ?? initialCardState(r.at);
-				states.set(key, applyRating(r.rating, prev));
-			}
-			for (const [key, st] of states) {
-				const [u, cardId] = key.split(':');
-				this.states.set(`${u}:${cardId}`, { ...st, due: st.due });
-			}
-		}
 	}
 
 	// ---- decks & cards -------------------------------------------------
@@ -544,19 +517,6 @@ class NeonStore {
 					'INSERT INTO cards (id, deck_id, front, back, hint) VALUES ($1,$2,$3,$4,$5)',
 					[c.id, c.deckId, c.front, c.back, c.hint ?? null]
 				);
-			}
-			const { users, reviews } = generateDemoHistories(DECKS);
-			for (const u of users) {
-				await this.sql('INSERT INTO users (id, name, avatar, created_at) VALUES ($1,$2,$3,$4)', [
-					u.id,
-					u.name,
-					u.avatar,
-					u.createdAt
-				]);
-			}
-			if (reviews.length) {
-				const rows = reviews.map((r) => `('${r.userId}','${r.cardId}','${r.deckId}','${r.rating}',${r.ms},${r.at})`);
-				await this.sql(`INSERT INTO reviews (user_id, card_id, deck_id, rating, ms, at) VALUES ${rows.join(',')}`);
 			}
 		}
 	}
