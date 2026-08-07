@@ -4,6 +4,7 @@
 	import Stat from '$lib/components/Stat.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Card } from '$lib/components/ui/card';
+	import { Badge } from '$lib/components/ui/badge';
 	import { seededShuffle } from '$lib/engine/shuffle.js';
 	import { missToast, nemesisVerdict } from '$lib/engine/nemesisToast.js';
 
@@ -84,7 +85,6 @@
 		try {
 			await fetch('/api/quiz', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ quizId, startedAt, endedAt: Date.now(), results: results.map(r => ({ questionId: r.questionId, correct: r.correct, ms: r.ms })), nemesis: nemesisPayload }) });
 		} catch {}
-		// Local nemesis verdict — computed from the actual duel data, no API call.
 		if (nemesisPayload && nemesisName) {
 			const v = nemesisVerdict({ nemesisName, myScore: correct, myTotal: total, theirScore: +(nemesisPayload.theirCorrect), theirTotal: +(nemesisPayload.theirTotal), record: null });
 			toast(v.title, { description: v.body, duration: 8000 });
@@ -98,17 +98,17 @@
 	}
 
 	function optionClass(i) {
-		if (!reveal) return 'border-input bg-background hover:bg-muted active:scale-[0.99]';
-		if (i === current.correctIndex) return 'border-green-500 bg-green-50 text-green-800';
-		if (i === wrongPick) return 'border-red-500 bg-red-50 text-red-800';
-		return 'border-input bg-background opacity-50';
+		if (!reveal) return 'border-input bg-background hover:bg-muted active:scale-[0.99] text-foreground';
+		if (i === current.correctIndex) return 'border-success bg-success/15 text-success font-semibold';
+		if (i === wrongPick) return 'border-destructive bg-destructive/15 text-destructive font-semibold';
+		return 'border-input bg-background opacity-50 text-foreground';
 	}
 </script>
 
 <div class="space-y-5">
 	{#if done}
 		<div class="space-y-4 pt-4 text-center">
-			<h1 class="font-display text-6xl font-semibold tracking-tight">{Math.round((correctCount / round.length) * 100)}%</h1>
+			<h1 class="font-display text-6xl font-semibold tracking-tight text-foreground">{Math.round((correctCount / round.length) * 100)}%</h1>
 			<p class="text-muted-foreground">{correctCount} of {round.length} correct</p>
 			<div class="grid grid-cols-2 gap-3"><Stat label="Correct" value={correctCount} /><Stat label="Missed" value={round.length - correctCount} /></div>
 			<div class="flex flex-wrap justify-center gap-3 pt-2"><Button onclick={restart}>New round</Button><Button variant="outline" onclick={() => goto('/quiz')}>All quizzes</Button><Button variant="ghost" onclick={() => goto('/dashboard')}>Dashboard</Button></div>
@@ -116,14 +116,14 @@
 	{:else}
 		<div class="flex items-center justify-between">
 			<div><p class="font-mono text-xs font-medium text-primary">{emoji} {title}</p><p class="text-xs text-muted-foreground">{round.length} random questions · tap to answer</p></div>
-			<div class="text-right"><p class="font-mono text-2xl font-semibold tracking-tight">{correctCount}<span class="text-base font-normal text-muted-foreground">/{results.length}</span></p><p class="text-xs text-muted-foreground">correct</p></div>
+			<div class="text-right"><p class="font-mono text-2xl font-semibold tracking-tight text-foreground">{correctCount}<span class="text-base font-normal text-muted-foreground">/{results.length}</span></p><p class="text-xs text-muted-foreground">correct</p></div>
 		</div>
 		<div class="h-1.5 w-full overflow-hidden rounded-full bg-muted"><div class="h-full rounded-full bg-primary transition-all duration-300" style={`width: ${progressPct}%`} /></div>
 
 		<Card class="p-6">
-			<div class="mb-3 flex items-center justify-between text-xs text-muted-foreground"><span class="font-mono omr-bubble">{idx + 1}<span class="font-mono"> / {round.length}</span></span><span class="rounded bg-muted px-2 py-0.5 font-mono">{emoji}{#if current.sourceQuiz} · {current.sourceQuiz}{/if}</span></div>
-			<h2 class="text-xl font-semibold leading-relaxed">{current.question}</h2>
-			{#if reveal && wrongPick === null}<p class="mt-4 text-sm font-medium text-green-700">✓ {current.options[current.correctIndex]}</p>{/if}
+			<div class="mb-3 flex items-center justify-between text-xs text-muted-foreground"><span class="font-mono omr-bubble">{idx + 1}<span class="font-mono"> / {round.length}</span></span><Badge variant="secondary" class="font-mono">{emoji}{#if current.sourceQuiz} · {current.sourceQuiz}{/if}</Badge></div>
+			<h2 class="text-xl font-semibold leading-relaxed text-foreground">{current.question}</h2>
+			{#if reveal && wrongPick === null}<p class="mt-4 text-sm font-medium text-success">✓ {current.options[current.correctIndex]}</p>{/if}
 		</Card>
 
 		<div class="grid grid-cols-1 gap-2">
@@ -131,7 +131,7 @@
 				<button onclick={() => answerByOption(i)} disabled={advancing || reveal} class={`flex items-center gap-3 rounded-xl border-2 px-4 py-3.5 text-left text-sm font-medium transition-colors ${optionClass(i)} ${reveal && i === current.correctIndex ? 'animate-pulse' : ''}`}><span class="font-mono text-xs opacity-60">{letters[i]}</span><span>{option}</span></button>
 			{/each}
 			{#if !reveal}
-				<button onclick={revealAnswer} disabled={advancing} class="flex items-center justify-center gap-2 rounded-xl border border-dashed px-4 py-3 text-sm text-muted-foreground hover:bg-muted">I don't know — reveal it</button>
+				<button onclick={revealAnswer} disabled={advancing} class="flex items-center justify-center gap-2 rounded-xl border border-dashed border-border px-4 py-3 text-sm text-muted-foreground hover:bg-muted transition-colors">I don't know — reveal it</button>
 			{/if}
 		</div>
 	{/if}

@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
-	import { Clock, AlertTriangle, CheckCircle2, XCircle, Award, RotateCcw, ArrowLeft, ArrowRight, ShieldAlert, Zap } from 'lucide-svelte';
+	import { Clock, AlertTriangle, CheckCircle2, XCircle, Award, ArrowLeft, ArrowRight, Grid } from 'lucide-svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Card } from '$lib/components/ui/card';
+	import { Badge } from '$lib/components/ui/badge';
 	import { calculatePrelimsScore, type QuestionResult, type PrelimsScorecard } from '$lib/engine/quizEngine.ts';
 
 	interface Question {
@@ -27,16 +28,16 @@
 	const totalQuestions = $derived(questions.length);
 
 	let currentIndex = $state(0);
-	let userAnswers = $state<Record<number, number>>({}); // index -> chosen option
+	let userAnswers = $state<Record<number, number>>({});
 	let markedForReview = $state<Record<number, boolean>>({});
-	let questionTimes = $state<Record<number, number>>({}); // index -> ms spent
+	let questionTimes = $state<Record<number, number>>({});
 	let currentQuestionStartTime = $state(Date.now());
 	let startedAt = $state(Date.now());
 	let endedAt = $state<number | null>(null);
 	let submitted = $state(false);
 	let scorecard = $state<PrelimsScorecard | null>(null);
+	let showMobilePalette = $state(false);
 
-	// Timer (2 minutes per question default: e.g. 20 questions = 40 mins)
 	let timeRemaining = $state(totalQuestions * 120);
 
 	const timerInterval = setInterval(() => {
@@ -67,12 +68,12 @@
 	function selectQuestion(idx: number) {
 		trackTimeSpentOnCurrent();
 		currentIndex = idx;
+		showMobilePalette = false;
 	}
 
 	function chooseOption(optIndex: number) {
 		if (submitted) return;
 		if (userAnswers[currentIndex] === optIndex) {
-			// Deselect option
 			delete userAnswers[currentIndex];
 		} else {
 			userAnswers[currentIndex] = optIndex;
@@ -111,116 +112,147 @@
 </script>
 
 <div class="fixed inset-0 z-50 flex flex-col bg-background text-foreground overflow-y-auto">
-	<!-- Top Bar -->
-	<header class="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur px-6 py-3.5 flex items-center justify-between shadow-xs">
-		<div class="flex items-center gap-3">
-			<button onclick={onClose} class="rounded-lg p-1.5 hover:bg-muted text-muted-foreground hover:text-foreground">
-				<ArrowLeft class="size-5" />
+	<!-- Mobile-Optimized Top Bar -->
+	<header class="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur px-3 py-2.5 sm:px-6 sm:py-3.5 flex items-center justify-between shadow-xs">
+		<div class="flex items-center gap-2 sm:gap-3 min-w-0">
+			<button onclick={onClose} class="rounded-lg p-1 sm:p-1.5 hover:bg-muted text-muted-foreground hover:text-foreground shrink-0">
+				<ArrowLeft class="size-4 sm:size-5" />
 			</button>
-			<div>
-				<div class="flex items-center gap-2">
-					<span class="rounded bg-primary/10 px-2 py-0.5 font-mono text-xs font-bold text-primary">UPSC PRELIMS SIMULATOR</span>
-					<span class="text-xs font-medium text-muted-foreground">+2.0 Marks / -0.66 Negative</span>
+			<div class="min-w-0">
+				<div class="flex items-center gap-1.5 sm:gap-2 truncate">
+					<Badge variant="default" class="font-mono text-[10px] sm:text-xs font-bold truncate">UPSC PRELIMS</Badge>
+					<span class="text-[10px] sm:text-xs font-medium text-muted-foreground hidden sm:inline-block">+2.0 / -0.66</span>
 				</div>
 			</div>
 		</div>
 
 		{#if !submitted}
-			<div class="flex items-center gap-6">
-				<div class="flex items-center gap-2 font-mono text-sm font-semibold {timeRemaining < 300 ? 'text-red-500 animate-pulse' : 'text-primary'}">
-					<Clock class="size-4" />
+			<div class="flex items-center gap-2 sm:gap-4 shrink-0">
+				<!-- Question palette trigger on mobile -->
+				<Button variant="ghost" size="sm" onclick={() => (showMobilePalette = !showMobilePalette)} class="lg:hidden p-1.5 h-8 gap-1 text-xs">
+					<Grid class="size-4" />
+					<span class="text-[11px] font-mono">{currentIndex + 1}/{totalQuestions}</span>
+				</Button>
+
+				<div class="flex items-center gap-1 sm:gap-2 font-mono text-xs sm:text-sm font-semibold {timeRemaining < 300 ? 'text-destructive animate-pulse' : 'text-primary'}">
+					<Clock class="size-3.5 sm:size-4" />
 					<span>{formatTimer(timeRemaining)}</span>
 				</div>
 
-				<Button variant="default" size="sm" onclick={submitExam} class="gap-1.5 font-semibold bg-green-600 hover:bg-green-700 text-white">
-					<span>Submit OMR Exam</span>
+				<Button variant="default" size="sm" onclick={submitExam} class="gap-1 text-xs sm:text-sm px-2.5 py-1 sm:px-3 sm:py-1.5 font-semibold bg-success hover:bg-success/90 text-success-foreground">
+					<span>Submit</span><span class="hidden sm:inline"> OMR</span>
 				</Button>
 			</div>
 		{:else}
-			<Button variant="outline" size="sm" onclick={onClose}>Exit Simulator</Button>
+			<Button variant="outline" size="sm" onclick={onClose} class="text-xs">Exit</Button>
 		{/if}
 	</header>
 
-	<main class="mx-auto max-w-5xl w-full flex-1 p-6 space-y-6">
+	<!-- Mobile Palette Bar (Collapsible Strip on Mobile) -->
+	{#if !submitted && showMobilePalette}
+		<div class="lg:hidden sticky top-12 z-10 border-b border-border bg-card p-3 space-y-2 shadow-md animate-in slide-in-from-top duration-200">
+			<div class="flex items-center justify-between text-xs text-muted-foreground">
+				<span class="font-mono font-bold uppercase">Select Question</span>
+				<button onclick={() => (showMobilePalette = false)} class="text-xs font-semibold text-primary">Close</button>
+			</div>
+			<div class="flex items-center gap-1.5 overflow-x-auto pb-2 pt-1 scrollbar-none">
+				{#each questions as _, idx (idx)}
+					{@const isAnswered = userAnswers[idx] !== undefined}
+					{@const isMarked = markedForReview[idx]}
+					{@const isCurrent = currentIndex === idx}
+
+					<button
+						type="button"
+						onclick={() => selectQuestion(idx)}
+						class="flex size-8 shrink-0 items-center justify-center rounded-lg font-mono text-xs font-bold transition-all border {isCurrent ? 'ring-2 ring-primary border-primary' : ''} {isMarked ? 'bg-warning/20 text-warning border-warning' : isAnswered ? 'bg-success/20 text-success border-success' : 'bg-muted text-muted-foreground border-border'}"
+					>
+						{idx + 1}
+					</button>
+				{/each}
+			</div>
+		</div>
+	{/if}
+
+	<main class="mx-auto max-w-5xl w-full flex-1 p-3 sm:p-6 space-y-4 sm:space-y-6">
 		{#if submitted && scorecard}
 			<!-- Scorecard Results View -->
-			<div class="space-y-6 animate-in fade-in duration-300">
+			<div class="space-y-4 sm:space-y-6 animate-in fade-in duration-300">
 				<!-- Banner Cutoff Header -->
-				<Card class="p-6 border border-border bg-card text-foreground shadow-md space-y-4">
-					<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border/60 pb-4">
+				<Card class="p-4 sm:p-6 border border-border bg-card text-foreground shadow-md space-y-4">
+					<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 border-b border-border/60 pb-4">
 						<div>
-							<span class="text-xs font-mono font-bold uppercase tracking-wider text-muted-foreground">Prelims Exam Performance</span>
-							<h1 class="text-4xl font-extrabold tracking-tight font-mono mt-1">
-								{scorecard.scaledScore200} <span class="text-xl font-normal text-muted-foreground">/ 200 Marks</span>
+							<span class="text-[10px] sm:text-xs font-mono font-bold uppercase tracking-wider text-muted-foreground">Prelims Exam Performance</span>
+							<h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight font-mono mt-1 text-foreground">
+								{scorecard.scaledScore200} <span class="text-lg sm:text-xl font-normal text-muted-foreground">/ 200 Marks</span>
 							</h1>
 						</div>
 
-						<div class="flex items-center gap-2 rounded-xl px-4 py-2.5 font-semibold text-sm border {scorecard.cutoffVerdict.tone === 'green' ? 'border-green-500/40 bg-green-500/10 text-green-700 dark:text-green-400' : scorecard.cutoffVerdict.tone === 'amber' ? 'border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400' : 'border-red-500/40 bg-red-500/10 text-red-700 dark:text-red-400'}">
-							<Award class="size-5" />
+						<Badge variant={scorecard.cutoffVerdict.tone === 'green' ? 'success' : scorecard.cutoffVerdict.tone === 'amber' ? 'warning' : 'destructive'} class="w-full sm:w-auto justify-center px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-semibold gap-1.5">
+							<Award class="size-4 sm:size-5" />
 							<span>{scorecard.cutoffVerdict.label}</span>
-						</div>
+						</Badge>
 					</div>
 
-					<p class="text-sm leading-relaxed text-muted-foreground">
+					<p class="text-xs sm:text-sm leading-relaxed text-muted-foreground">
 						{scorecard.cutoffVerdict.detail}
 					</p>
 
-					<!-- Stats Matrix -->
-					<div class="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2">
-						<div class="rounded-lg bg-muted/50 p-3 text-center border border-border/40">
-							<p class="text-xs text-muted-foreground font-medium">Attempted</p>
-							<p class="text-xl font-bold font-mono mt-0.5">{scorecard.attempted}/{scorecard.totalQuestions}</p>
+					<!-- Stats Matrix Mobile Responsive Grid -->
+					<div class="grid grid-cols-2 sm:grid-cols-5 gap-2 sm:gap-3 pt-2">
+						<div class="rounded-lg bg-muted/50 p-2.5 sm:p-3 text-center border border-border/40">
+							<p class="text-[10px] sm:text-xs text-muted-foreground font-medium">Attempted</p>
+							<p class="text-base sm:text-xl font-bold font-mono mt-0.5 text-foreground">{scorecard.attempted}/{scorecard.totalQuestions}</p>
 						</div>
-						<div class="rounded-lg bg-green-500/10 p-3 text-center border border-green-500/30">
-							<p class="text-xs text-green-700 dark:text-green-400 font-medium">Correct (+2.0)</p>
-							<p class="text-xl font-bold font-mono text-green-600 mt-0.5">{scorecard.correct}</p>
+						<div class="rounded-lg bg-success/15 p-2.5 sm:p-3 text-center border border-success/30">
+							<p class="text-[10px] sm:text-xs text-success font-medium">Correct (+2.0)</p>
+							<p class="text-base sm:text-xl font-bold font-mono text-success mt-0.5">{scorecard.correct}</p>
 						</div>
-						<div class="rounded-lg bg-red-500/10 p-3 text-center border border-red-500/30">
-							<p class="text-xs text-red-700 dark:text-red-400 font-medium">Wrong (-0.66)</p>
-							<p class="text-xl font-bold font-mono text-red-600 mt-0.5">{scorecard.incorrect}</p>
+						<div class="rounded-lg bg-destructive/15 p-2.5 sm:p-3 text-center border border-destructive/30">
+							<p class="text-[10px] sm:text-xs text-destructive font-medium">Wrong (-0.66)</p>
+							<p class="text-base sm:text-xl font-bold font-mono text-destructive mt-0.5">{scorecard.incorrect}</p>
 						</div>
-						<div class="rounded-lg bg-muted/50 p-3 text-center border border-border/40">
-							<p class="text-xs text-muted-foreground font-medium">Accuracy</p>
-							<p class="text-xl font-bold font-mono mt-0.5">{scorecard.accuracyPct}%</p>
+						<div class="rounded-lg bg-muted/50 p-2.5 sm:p-3 text-center border border-border/40">
+							<p class="text-[10px] sm:text-xs text-muted-foreground font-medium">Accuracy</p>
+							<p class="text-base sm:text-xl font-bold font-mono mt-0.5 text-foreground">{scorecard.accuracyPct}%</p>
 						</div>
-						<div class="rounded-lg bg-amber-500/10 p-3 text-center border border-amber-500/30">
-							<p class="text-xs text-amber-700 dark:text-amber-400 font-medium">Hesitant (>45s)</p>
-							<p class="text-xl font-bold font-mono text-amber-600 mt-0.5">{scorecard.hesitantCount}</p>
+						<div class="rounded-lg bg-warning/15 p-2.5 sm:p-3 text-center border border-warning/30 col-span-2 sm:col-span-1">
+							<p class="text-[10px] sm:text-xs text-warning font-medium">Hesitant (>45s)</p>
+							<p class="text-base sm:text-xl font-bold font-mono text-warning mt-0.5">{scorecard.hesitantCount}</p>
 						</div>
 					</div>
 				</Card>
 
 				<!-- Detailed Question Review Section -->
 				<div class="space-y-4">
-					<h3 class="font-display text-lg font-semibold tracking-tight">Question-by-Question Review</h3>
-					<div class="space-y-4">
+					<h3 class="font-display text-base sm:text-lg font-semibold tracking-tight text-foreground">Question-by-Question Review</h3>
+					<div class="space-y-3 sm:space-y-4">
 						{#each questions as q, idx (q.id)}
 							{@const chosen = userAnswers[idx]}
 							{@const isCorrect = chosen === q.correctIndex}
 							{@const isUnattempted = chosen === undefined}
 
-							<Card class="p-5 border border-border space-y-3">
+							<Card class="p-4 sm:p-5 border border-border space-y-3">
 								<div class="flex items-center justify-between text-xs text-muted-foreground">
 									<span class="font-mono font-bold">Q{idx + 1} of {totalQuestions}</span>
 									{#if isUnattempted}
-										<span class="rounded bg-muted px-2 py-0.5 font-medium">Unattempted (0.0)</span>
+										<Badge variant="secondary" class="text-[10px]">Unattempted (0.0)</Badge>
 									{:else if isCorrect}
-										<span class="rounded bg-green-500/10 text-green-600 font-bold px-2 py-0.5">✓ Correct (+2.0)</span>
+										<Badge variant="success" class="text-[10px]">✓ Correct (+2.0)</Badge>
 									{:else}
-										<span class="rounded bg-red-500/10 text-red-600 font-bold px-2 py-0.5">✗ Incorrect (-0.66)</span>
+										<Badge variant="destructive" class="text-[10px]">✗ Incorrect (-0.66)</Badge>
 									{/if}
 								</div>
 
-								<p class="text-base font-semibold leading-relaxed">{q.question}</p>
+								<p class="text-sm sm:text-base font-semibold leading-relaxed text-foreground">{q.question}</p>
 
 								<div class="grid grid-cols-1 gap-2 pt-1">
 									{#each q.options as opt, optIdx (optIdx)}
-										<div class="flex items-center justify-between rounded-lg border px-3.5 py-2.5 text-xs font-medium {optIdx === q.correctIndex ? 'border-green-500 bg-green-500/10 text-green-700 font-semibold' : optIdx === chosen ? 'border-red-500 bg-red-500/10 text-red-700' : 'border-border opacity-60'}">
-											<span>{letters[optIdx]}. {opt}</span>
+										<div class="flex items-center justify-between rounded-lg border px-3 py-2 sm:px-3.5 sm:py-2.5 text-xs font-medium {optIdx === q.correctIndex ? 'border-success bg-success/15 text-success font-semibold' : optIdx === chosen ? 'border-destructive bg-destructive/15 text-destructive' : 'border-border opacity-60'}">
+											<span class="pr-2">{letters[optIdx]}. {opt}</span>
 											{#if optIdx === q.correctIndex}
-												<CheckCircle2 class="size-4 text-green-600" />
+												<CheckCircle2 class="size-4 text-success shrink-0" />
 											{:else if optIdx === chosen}
-												<XCircle class="size-4 text-red-600" />
+												<XCircle class="size-4 text-destructive shrink-0" />
 											{/if}
 										</div>
 									{/each}
@@ -238,35 +270,35 @@
 			</div>
 		{:else if currentQ}
 			<!-- Exam Taking View -->
-			<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+			<div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
 				<!-- Question Area -->
-				<div class="lg:col-span-8 space-y-6">
-					<Card class="p-6 border border-border bg-card space-y-6 shadow-sm">
+				<div class="lg:col-span-8 space-y-4 sm:space-y-6">
+					<Card class="p-4 sm:p-6 border border-border bg-card space-y-4 sm:space-y-6 shadow-sm">
 						<div class="flex items-center justify-between text-xs text-muted-foreground">
 							<span class="font-mono font-bold text-primary">Question {currentIndex + 1} of {totalQuestions}</span>
-							<button onclick={toggleReview} class="flex items-center gap-1 text-xs font-medium {markedForReview[currentIndex] ? 'text-amber-500 font-bold' : 'text-muted-foreground hover:text-foreground'}">
+							<button onclick={toggleReview} class="flex items-center gap-1 text-xs font-medium {markedForReview[currentIndex] ? 'text-warning font-bold' : 'text-muted-foreground hover:text-foreground'}">
 								<AlertTriangle class="size-3.5" />
-								<span>{markedForReview[currentIndex] ? 'Marked for Review' : 'Mark for Review'}</span>
+								<span>{markedForReview[currentIndex] ? 'Marked' : 'Mark Review'}</span>
 							</button>
 						</div>
 
-						<h2 class="text-xl font-semibold leading-relaxed text-foreground">
+						<h2 class="text-base sm:text-xl font-semibold leading-relaxed text-foreground">
 							{currentQ.question}
 						</h2>
 
-						<div class="grid grid-cols-1 gap-3 pt-2">
+						<div class="grid grid-cols-1 gap-2.5 sm:gap-3 pt-1 sm:pt-2">
 							{#each currentQ.options as opt, optIdx (optIdx)}
 								{@const isSelected = userAnswers[currentIndex] === optIdx}
 								<button
 									type="button"
 									onclick={() => chooseOption(optIdx)}
-									class="flex items-center justify-between rounded-xl border-2 px-4 py-3.5 text-left text-sm font-medium transition-all {isSelected ? 'border-primary bg-primary/10 text-primary font-semibold ring-1 ring-primary' : 'border-input bg-background hover:bg-muted text-foreground'}"
+									class="flex items-center justify-between rounded-xl border-2 px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs sm:text-sm font-medium transition-all {isSelected ? 'border-primary bg-primary/10 text-primary font-semibold ring-1 ring-primary' : 'border-input bg-background hover:bg-muted text-foreground'}"
 								>
-									<div class="flex items-center gap-3">
-										<span class="font-mono text-xs font-bold opacity-60">{letters[optIdx]}</span>
-										<span>{opt}</span>
+									<div class="flex items-center gap-2.5 sm:gap-3 pr-2">
+										<span class="font-mono text-xs font-bold opacity-60 shrink-0">{letters[optIdx]}</span>
+										<span class="leading-normal">{opt}</span>
 									</div>
-									<div class="size-4 rounded-full border border-primary/40 flex items-center justify-center {isSelected ? 'bg-primary border-primary' : ''}">
+									<div class="size-4 shrink-0 rounded-full border border-primary/40 flex items-center justify-center {isSelected ? 'bg-primary border-primary' : ''}">
 										{#if isSelected}
 											<div class="size-1.5 rounded-full bg-primary-foreground"></div>
 										{/if}
@@ -276,13 +308,13 @@
 						</div>
 					</Card>
 
-					<!-- Bottom Prev / Next Nav -->
-					<div class="flex items-center justify-between">
+					<!-- Bottom Mobile Prev / Next Nav -->
+					<div class="flex items-center justify-between gap-3">
 						<Button
 							variant="outline"
 							disabled={currentIndex === 0}
 							onclick={() => selectQuestion(currentIndex - 1)}
-							class="gap-1.5"
+							class="flex-1 sm:flex-none gap-1.5 text-xs sm:text-sm h-10"
 						>
 							<ArrowLeft class="size-4" /> Previous
 						</Button>
@@ -291,19 +323,19 @@
 							variant="default"
 							disabled={currentIndex === totalQuestions - 1}
 							onclick={() => selectQuestion(currentIndex + 1)}
-							class="gap-1.5"
+							class="flex-1 sm:flex-none gap-1.5 text-xs sm:text-sm h-10"
 						>
 							Next <ArrowRight class="size-4" />
 						</Button>
 					</div>
 				</div>
 
-				<!-- Question Palette Sidebar -->
-				<div class="lg:col-span-4 space-y-4">
-					<Card class="p-4 border border-border bg-card space-y-4">
+				<!-- Question Palette Sidebar (Desktop Sidebar / Mobile Accessible) -->
+				<div class="hidden lg:block lg:col-span-4 space-y-4">
+					<Card class="p-4 border border-border bg-card space-y-4 sticky top-20">
 						<h3 class="font-mono text-xs font-bold uppercase tracking-wider text-muted-foreground">Question Palette</h3>
 
-						<div class="grid grid-cols-5 gap-2">
+						<div class="grid grid-cols-5 gap-2 max-h-[360px] overflow-y-auto pr-1">
 							{#each questions as _, idx (idx)}
 								{@const isAnswered = userAnswers[idx] !== undefined}
 								{@const isMarked = markedForReview[idx]}
@@ -312,7 +344,7 @@
 								<button
 									type="button"
 									onclick={() => selectQuestion(idx)}
-									class="flex size-9 items-center justify-center rounded-lg font-mono text-xs font-bold transition-all border {isCurrent ? 'ring-2 ring-primary ring-offset-1 border-primary' : ''} {isMarked ? 'bg-amber-500/20 text-amber-600 border-amber-500' : isAnswered ? 'bg-green-500/20 text-green-600 border-green-500' : 'bg-muted text-muted-foreground border-border'}"
+									class="flex size-9 items-center justify-center rounded-lg font-mono text-xs font-bold transition-all border {isCurrent ? 'ring-2 ring-primary ring-offset-1 border-primary' : ''} {isMarked ? 'bg-warning/20 text-warning border-warning' : isAnswered ? 'bg-success/20 text-success border-success' : 'bg-muted text-muted-foreground border-border'}"
 								>
 									{idx + 1}
 								</button>
@@ -321,11 +353,11 @@
 
 						<div class="space-y-1.5 text-[11px] text-muted-foreground pt-2 border-t border-border/60">
 							<div class="flex items-center gap-2">
-								<span class="size-2.5 rounded bg-green-500"></span>
+								<span class="size-2.5 rounded bg-success"></span>
 								<span>Answered</span>
 							</div>
 							<div class="flex items-center gap-2">
-								<span class="size-2.5 rounded bg-amber-500"></span>
+								<span class="size-2.5 rounded bg-warning"></span>
 								<span>Marked for Review</span>
 							</div>
 							<div class="flex items-center gap-2">

@@ -1,8 +1,10 @@
 <script>
+	import { Badge } from '$lib/components/ui/badge';
+
 	let { items = [] } = $props();
 
 	const toneStyles = {
-		good: 'border-l-green-500',
+		good: 'border-l-success',
 		bad: 'border-l-destructive',
 		neutral: 'border-l-muted-foreground'
 	};
@@ -13,7 +15,7 @@
 		{#each items as item (item.title)}
 			<div class={`rounded-lg border border-l-4 bg-card p-4 ${toneStyles[item.tone] ?? 'border-l-muted-foreground'}`}>
 				{#if item.flag}
-					<span class="mb-1 inline-block rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+					<Badge variant="secondary" class="mb-1">
 						{item.flag === 'peer-beat'
 							? 'You beat the room'
 							: item.flag === 'peer-lost'
@@ -23,9 +25,9 @@
 									: item.flag === 'nemesis-lost'
 										? 'Rival up'
 										: 'Even'}
-					</span>
+					</Badge>
 				{/if}
-				<p class="font-medium">{item.title}</p>
+				<p class="font-medium text-foreground">{item.title}</p>
 				<p class="text-sm text-muted-foreground">{item.body}</p>
 			</div>
 		{/each}

@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { Search, ChevronDown, ChevronRight, FolderTree, CheckCircle2 } from 'lucide-svelte';
+	import { Badge } from '$lib/components/ui/badge';
+	import { Button } from '$lib/components/ui/button';
 
 	interface SubTopic {
 		name: string;
@@ -92,27 +94,29 @@
 				<FolderTree class="size-4" />
 			</div>
 			<div>
-				<h3 class="font-display text-sm font-semibold tracking-tight">Subject & Sub-tree Index</h3>
+				<h3 class="font-display text-sm font-semibold tracking-tight text-foreground">Subject & Sub-tree Index</h3>
 				<p class="text-[11px] text-muted-foreground">{totalQuestions.toLocaleString('en-IN')} questions across {filters.length} subjects</p>
 			</div>
 		</div>
 
 		<div class="flex items-center gap-1 text-[11px]">
-			<button
-				type="button"
+			<Button
+				variant="ghost"
+				size="sm"
 				onclick={expandAll}
-				class="rounded px-2 py-0.5 font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+				class="h-6 px-2 text-[11px] text-muted-foreground hover:text-foreground"
 			>
 				Expand
-			</button>
+			</Button>
 			<span class="text-muted-foreground/40">·</span>
-			<button
-				type="button"
+			<Button
+				variant="ghost"
+				size="sm"
 				onclick={collapseAll}
-				class="rounded px-2 py-0.5 font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+				class="h-6 px-2 text-[11px] text-muted-foreground hover:text-foreground"
 			>
 				Collapse
-			</button>
+			</Button>
 		</div>
 	</div>
 
@@ -140,7 +144,7 @@
 			<span>All Subjects (Mixed Grand Test)</span>
 		</div>
 		<div class="flex items-center gap-1.5">
-			<span class="rounded-full bg-muted px-2 py-0.5 font-mono text-[10px] font-medium opacity-80">{totalQuestions}</span>
+			<Badge variant="secondary" class="font-mono text-[10px]">{totalQuestions}</Badge>
 			{#if selectedSubject === 'all'}
 				<CheckCircle2 class="size-3.5 text-primary" />
 			{/if}
@@ -185,7 +189,7 @@
 						</div>
 
 						<div class="flex items-center gap-1.5 shrink-0 ml-2">
-							<span class="rounded-full bg-muted px-2 py-0.5 font-mono text-[10px] font-medium text-muted-foreground">{f.count}</span>
+							<Badge variant="outline" class="font-mono text-[10px] text-muted-foreground">{f.count}</Badge>
 							{#if isSubjectSelected}
 								<CheckCircle2 class="size-3.5 text-primary" />
 							{/if}

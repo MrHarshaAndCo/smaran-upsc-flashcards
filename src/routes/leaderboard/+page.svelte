@@ -2,6 +2,8 @@
 	import { page } from '$app/state';
 	import Leaderboard from '$lib/components/Leaderboard.svelte';
 	import Stat from '$lib/components/Stat.svelte';
+	import { Badge } from '$lib/components/ui/badge';
+	import { Button } from '$lib/components/ui/button';
 
 	let { data } = $props();
 	let selected = $state('global');
@@ -18,7 +20,7 @@
 <div class="space-y-8 pt-6">
 	<header class="border-b border-border pb-5">
 		<p class="eyebrow text-primary">The hall of names</p>
-		<h1 class="font-display mt-1.5 text-3xl font-semibold tracking-tight">Leaderboard</h1>
+		<h1 class="font-display mt-1.5 text-3xl font-semibold tracking-tight text-foreground">Leaderboard</h1>
 		<p class="mt-1 max-w-xl text-sm text-muted-foreground">
 			Accuracy is correct answers ÷ reviews. The nemesis system pairs you with the student
 			closest to your own accuracy — always someone worth catching.
@@ -41,23 +43,23 @@
 		<div class="grid grid-cols-3 gap-2">
 			{#each data.stats.podium as e, i (e.userId)}
 				<div class="flex flex-col items-center gap-1 rounded-xl border border-border bg-card px-2 py-3 text-center">
-					<span class="font-mono text-xs {i === 0 ? 'text-amber-600' : i === 1 ? 'text-slate-400' : 'text-amber-800'}">#{i + 1}</span>
+					<span class="font-mono text-xs {i === 0 ? 'text-warning font-bold' : i === 1 ? 'text-muted-foreground font-semibold' : 'text-warning/80 font-medium'}">#{i + 1}</span>
 					<span class="text-xl">{e.avatar}</span>
-					<span class="w-full truncate text-xs font-medium">{e.name}</span>
-					<span class="font-mono text-xs text-muted-foreground">{Math.round(e.accuracy * 100)}%</span>
+					<span class="w-full truncate text-xs font-medium text-foreground">{e.name}</span>
+					<Badge variant="outline" class="font-mono text-xs text-muted-foreground">{Math.round(e.accuracy * 100)}%</Badge>
 				</div>
 			{/each}
 		</div>
 	{/if}
 
 	<div class="flex gap-2 overflow-x-auto pb-1">
-		<button onclick={() => (selected = 'global')} class="shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium transition-colors {selected === 'global' ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-input hover:bg-muted'}">
+		<Button size="sm" variant={selected === 'global' ? 'default' : 'outline'} onclick={() => (selected = 'global')}>
 			Global
-		</button>
+		</Button>
 		{#each data.decks as d (d.id)}
-			<button onclick={() => (selected = d.id)} class="shrink-0 rounded-full border px-4 py-1.5 text-sm font-medium transition-colors {selected === d.id ? 'bg-primary text-primary-foreground border-primary' : 'bg-background border-input hover:bg-muted'}">
+			<Button size="sm" variant={selected === d.id ? 'default' : 'outline'} onclick={() => (selected = d.id)}>
 				{d.emoji} {d.title}
-			</button>
+			</Button>
 		{/each}
 	</div>
 
@@ -66,7 +68,7 @@
 			<Stat label="Your rank" value={myRank > 0 ? `#${myRank}` : '—'} sub={deck ? deck.title : 'global'} />
 			<Stat label="Your accuracy" value={`${Math.round(myEntry.accuracy * 100)}%`} sub={`${myEntry.reviews} reviews`} />
 			{#if top && top.userId !== me.id}
-				<Stat label="Gap to first" value={`${Math.round((top.accuracy - myEntry.accuracy) * 100)}%`} sub={`${top.name} leads`} tone={top.accuracy - myEntry.accuracy < 0.05 ? 'green-600' : ''} />
+				<Stat label="Gap to first" value={`${Math.round((top.accuracy - myEntry.accuracy) * 100)}%`} sub={`${top.name} leads`} />
 			{/if}
 		</div>
 	{/if}

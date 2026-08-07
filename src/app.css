@@ -29,6 +29,8 @@
 	--color-destructive-foreground: var(--destructive-foreground);
 	--color-success: var(--success);
 	--color-success-foreground: var(--success-foreground);
+	--color-warning: var(--warning);
+	--color-warning-foreground: var(--warning-foreground);
 	--color-border: var(--border);
 	--color-input: var(--input);
 	--color-ring: var(--ring);
@@ -61,6 +63,8 @@
 	--destructive-foreground: #ffffff;
 	--success: #16a34a;
 	--success-foreground: #ffffff;
+	--warning: #d97706;
+	--warning-foreground: #ffffff;
 	--border: #e2e8f0;
 	--input: #f8fafc;
 	--ring: #1e40af;

@@ -1,13 +1,14 @@
 <script lang="ts">
-	import { BarChart3, Clock, AlertTriangle, CheckCircle2, TrendingUp } from 'lucide-svelte';
+	import { BarChart3, Clock, AlertTriangle, CheckCircle2 } from 'lucide-svelte';
 	import { Card } from '$lib/components/ui/card';
+	import { Badge } from '$lib/components/ui/badge';
 
 	interface TopicStat {
 		subject: string;
 		subTopic: string;
 		total: number;
 		correct: number;
-		accuracy: number; // 0..1
+		accuracy: number;
 		avgTimeSec: number;
 		hesitantCount: number;
 	}
@@ -18,10 +19,10 @@
 		topicStats: TopicStat[];
 	} = $props();
 
-	function getAccuracyTone(accuracy: number): string {
-		if (accuracy >= 0.8) return 'border-green-500/40 bg-green-500/10 text-green-700 dark:text-green-400';
-		if (accuracy >= 0.5) return 'border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400';
-		return 'border-red-500/40 bg-red-500/10 text-red-700 dark:text-red-400';
+	function getAccuracyVariant(accuracy: number): 'success' | 'warning' | 'destructive' {
+		if (accuracy >= 0.8) return 'success';
+		if (accuracy >= 0.5) return 'warning';
+		return 'destructive';
 	}
 </script>
 
@@ -29,9 +30,9 @@
 	<div class="flex items-center justify-between">
 		<div class="flex items-center gap-2">
 			<BarChart3 class="size-4 text-primary" />
-			<h3 class="font-display text-base font-semibold tracking-tight">Sub-Topic Mastery & Hesitation Heatmap</h3>
+			<h3 class="font-display text-base font-semibold tracking-tight text-foreground">Sub-Topic Mastery & Hesitation Heatmap</h3>
 		</div>
-		<span class="text-xs text-muted-foreground">{topicStats.length} sub-topics tracked</span>
+		<Badge variant="outline" class="text-xs text-muted-foreground">{topicStats.length} sub-topics tracked</Badge>
 	</div>
 
 	{#if topicStats.length === 0}
@@ -46,12 +47,12 @@
 					<div class="flex items-start justify-between">
 						<div class="space-y-0.5 min-w-0">
 							<span class="text-[10px] font-mono font-bold uppercase tracking-wider text-muted-foreground">{stat.subject}</span>
-							<h4 class="font-semibold text-sm truncate">{stat.subTopic}</h4>
+							<h4 class="font-semibold text-sm truncate text-foreground">{stat.subTopic}</h4>
 						</div>
 
-						<span class="rounded-full px-2.5 py-0.5 font-mono text-xs font-bold border {getAccuracyTone(stat.accuracy)}">
+						<Badge variant={getAccuracyVariant(stat.accuracy)} class="font-mono text-xs font-bold">
 							{Math.round(stat.accuracy * 100)}%
-						</span>
+						</Badge>
 					</div>
 
 					<!-- Accuracy Bar -->
@@ -62,7 +63,7 @@
 						</div>
 						<div class="h-2 w-full overflow-hidden rounded-full bg-muted">
 							<div
-								class="h-full rounded-full transition-all {stat.accuracy >= 0.8 ? 'bg-green-500' : stat.accuracy >= 0.5 ? 'bg-amber-500' : 'bg-red-500'}"
+								class="h-full rounded-full transition-all {stat.accuracy >= 0.8 ? 'bg-success' : stat.accuracy >= 0.5 ? 'bg-warning' : 'bg-destructive'}"
 								style={`width: ${Math.round(stat.accuracy * 100)}%`}
 							></div>
 						</div>
@@ -76,12 +77,12 @@
 						</span>
 
 						{#if stat.hesitantCount > 0}
-							<span class="flex items-center gap-1 text-amber-600 dark:text-amber-400 font-medium">
+							<span class="flex items-center gap-1 text-warning font-medium">
 								<AlertTriangle class="size-3" />
 								<span>{stat.hesitantCount} hesitant</span>
 							</span>
 						{:else}
-							<span class="flex items-center gap-1 text-green-600 dark:text-green-400 font-medium">
+							<span class="flex items-center gap-1 text-success font-medium">
 								<CheckCircle2 class="size-3" />
 								<span>Fluent Recall</span>
 							</span>

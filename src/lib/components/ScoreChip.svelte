@@ -1,7 +1,9 @@
 <script>
+	import { Badge } from '$lib/components/ui/badge';
+
 	let { correct, total } = $props();
 	const rate = $derived(total === 0 ? 0 : correct / total);
-	const cls = $derived(rate >= 0.7 ? 'text-green-600' : rate >= 0.4 ? 'text-amber-600' : 'text-red-600');
+	const variant = $derived(rate >= 0.7 ? 'success' : rate >= 0.4 ? 'warning' : 'destructive');
 </script>
 
-<span class={`font-semibold ${cls}`}>{correct}/{total}</span>
+<Badge {variant} class="font-mono font-semibold">{correct}/{total}</Badge>

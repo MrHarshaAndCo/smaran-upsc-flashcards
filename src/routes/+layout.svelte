@@ -6,6 +6,7 @@
 	import { Toaster } from 'svelte-sonner';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '$lib/components/ui/card';
+	import { Badge } from '$lib/components/ui/badge';
 
 	let { data, children } = $props();
 
@@ -54,7 +55,7 @@
 				</div>
 				<div class="flex flex-col">
 					<span class="font-display text-base font-bold italic tracking-tight leading-none text-foreground">
-						Makkhali <span class="text-xs font-mono font-bold not-italic text-primary">PRELIMS</span>
+						Makkhali <Badge variant="secondary" class="text-[10px] font-mono font-bold not-italic text-primary py-0 px-1">PRELIMS</Badge>
 					</span>
 					<span class="text-[10px] text-muted-foreground font-mono">UPSC Flashcards</span>
 				</div>
@@ -77,7 +78,7 @@
 			<!-- Right Actions -->
 			<div class="flex items-center gap-2 text-sm">
 				<div class="hidden sm:flex items-center gap-2 rounded-md border border-border bg-card px-3 py-1 text-xs">
-					<span class="size-2 rounded-full bg-green-500 animate-pulse"></span>
+					<span class="size-2 rounded-full bg-success animate-pulse"></span>
 					<span class="font-semibold text-foreground truncate max-w-[100px]">{data.user.name}</span>
 				</div>
 
@@ -113,7 +114,7 @@
 
 	<footer class="hidden border-t md:block mt-12">
 		<div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 text-xs text-muted-foreground">
-			<span class="font-display font-semibold">The Makkhali Project</span>
+			<span class="font-display font-semibold text-foreground">The Makkhali Project</span>
 			<span class="font-mono text-[11px]">UPSC Prelims Syllabus Index & MCQ Flashcards</span>
 		</div>
 	</footer>

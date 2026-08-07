@@ -9,6 +9,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Card } from '$lib/components/ui/card';
 	import { Input } from '$lib/components/ui/input';
+	import { Badge } from '$lib/components/ui/badge';
 	import { cardDuelLine } from '$lib/engine/nemesis.js';
 
 	let { data } = $props();
@@ -86,7 +87,7 @@
 <div class="space-y-8 pt-6">
 	<header class="border-b border-border pb-5">
 		<p class="eyebrow text-primary">Classroom</p>
-		<h1 class="font-display mt-1.5 text-3xl font-semibold tracking-tight">Colab</h1>
+		<h1 class="font-display mt-1.5 text-3xl font-semibold tracking-tight text-foreground">Colab</h1>
 		<p class="mt-1 max-w-xl text-sm text-muted-foreground">
 			Study groups, classmates, and the head-to-head ledger. Find your people, then decide who to catch.
 		</p>
@@ -99,7 +100,7 @@
 			label="Gap to first"
 			value={data.top ? `${Math.round((data.top.accuracy - (data.me?.accuracy ?? 0)) * 100)}%` : '—'}
 			sub={data.top?.name ?? 'No one yet'}
-			tone={data.top && data.top.userId === data.userId ? 'green-600' : ''}
+			tone={data.top && data.top.userId === data.userId ? 'success' : ''}
 		/>
 		<Stat label="Ahead of you" value={Math.max(0, data.myRank - 1)} sub="students to overtake" />
 		{#if data.me}
@@ -110,7 +111,7 @@
 	<!-- Study groups -->
 	<section class="space-y-4">
 		<SectionHeader icon={Users} title="Study groups" />
-		<Card class="p-4">
+		<Card class="p-4 border-border">
 			<p class="eyebrow mb-2 text-muted-foreground">Create a group</p>
 			<div class="flex flex-col gap-2">
 				<div class="flex gap-2">
@@ -142,14 +143,14 @@
 		{:else}
 			<div class="space-y-2">
 				{#each visibleGroups as g (g.id)}
-					<Card class="p-4">
+					<Card class="p-4 border-border">
 						<div class="flex items-center justify-between gap-3">
 							<div class="flex min-w-0 items-center gap-3">
 								<span class="text-xl leading-none">{g.emoji}</span>
 								<div class="min-w-0">
-									<p class="truncate font-medium">
-										{g.name}
-										{#if g.isMember}<span class="font-mono text-[10px] uppercase tracking-wider text-primary">· member</span>{/if}
+									<p class="truncate font-medium flex items-center gap-2 text-foreground">
+										<span>{g.name}</span>
+										{#if g.isMember}<Badge variant="secondary" class="font-mono text-[10px] text-primary">Member</Badge>{/if}
 									</p>
 									<p class="truncate text-xs text-muted-foreground">
 										<span class="font-mono">{g.memberCount}</span> {g.memberCount === 1 ? 'member' : 'members'}
@@ -179,7 +180,7 @@
 										<div class="space-y-1.5">
 											{#each detail.members as m (m.userId)}
 												<div class="flex items-center justify-between text-sm">
-													<span class="min-w-0 truncate">
+													<span class="min-w-0 truncate text-foreground">
 														{m.avatar} {m.name}
 														{#if m.userId === data.userId}<span class="text-muted-foreground"> (you)</span>{/if}
 													</span>
@@ -209,11 +210,11 @@
 		{:else}
 			<div class="grid gap-2 sm:grid-cols-2">
 				{#each visibleUsers as u (u.id)}
-					<Card class="flex items-center justify-between gap-3 p-3">
+					<Card class="flex items-center justify-between gap-3 p-3 border-border">
 						<div class="flex min-w-0 items-center gap-2.5">
 							<span class="text-lg">{u.avatar}</span>
 							<div class="min-w-0">
-								<p class="truncate text-sm font-medium">
+								<p class="truncate text-sm font-medium text-foreground">
 									{u.name}
 									{#if u.id === data.userId}<span class="text-muted-foreground"> (you)</span>{/if}
 								</p>
@@ -232,11 +233,11 @@
 	<!-- You vs the room per deck -->
 	<section>
 		<SectionHeader icon={Target} title="You vs the room" />
-		<Card class="divide-y">
+		<Card class="divide-y divide-border border-border">
 			{#each data.perDeck as d (d.deckId)}
 				<div class="p-4">
 					<div class="flex items-center justify-between text-sm">
-						<span class="font-medium">{d.emoji} {d.title}</span>
+						<span class="font-medium text-foreground">{d.emoji} {d.title}</span>
 						<span class="text-xs text-muted-foreground">
 							<span class="font-mono font-semibold text-foreground">{Math.round(myRate(d) * 100)}%</span> vs room
 							<span class="font-mono font-semibold text-foreground"> {data.room[d.deckId] == null ? '—' : `${Math.round(data.room[d.deckId] * 100)}%`}</span>
@@ -267,13 +268,13 @@
 			<SectionHeader icon={Swords} title={`Head-to-head with ${data.target.name}`} />
 			<div class="space-y-6">
 				<div class="flex items-center justify-between rounded-xl border border-border bg-muted/50 px-4 py-3 text-sm">
-					<span class="font-medium">{data.target.avatar} {data.target.name}</span>
+					<span class="font-medium text-foreground">{data.target.avatar} {data.target.name}</span>
 					<a href="/nemesis" class="text-xs font-medium text-primary hover:underline">Or face your nemesis →</a>
 				</div>
 				<H2HLedger decks={data.h2h} empty={`No shared decks with ${data.target.name} yet — study together first.`} />
 				<div>
 					<SectionHeader icon={Swords} title="Card-by-card duels" />
-					<Card class="divide-y">
+					<Card class="divide-y divide-border border-border">
 						{#if data.duels.length === 0}
 							<p class="p-6 text-center text-sm text-muted-foreground">No shared cards yet.</p>
 						{:else}

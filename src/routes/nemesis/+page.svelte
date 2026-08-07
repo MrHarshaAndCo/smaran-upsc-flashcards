@@ -1,9 +1,10 @@
 <script lang="ts">
-	import { Swords, Target, Users, ArrowRight, Shield, Sparkles } from 'lucide-svelte';
+	import { Swords, Users, Shield, Sparkles } from 'lucide-svelte';
 	import NemesisDossier from '$lib/components/NemesisDossier.svelte';
 	import RivalBadges from '$lib/components/RivalBadges.svelte';
 	import { Button } from '$lib/components/ui/button';
-	import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '$lib/components/ui/card';
+	import { Card } from '$lib/components/ui/card';
+	import { Badge } from '$lib/components/ui/badge';
 	import { cardDuelLine, h2hRecord } from '$lib/engine/nemesis.js';
 
 	let { data } = $props();
@@ -13,7 +14,7 @@
 	{#if !data.nemesis}
 		<div class="py-16 text-center space-y-4">
 			<Swords class="size-12 text-primary mx-auto opacity-50" />
-			<h1 class="font-display text-3xl font-semibold tracking-tight">No Rival Assigned Yet</h1>
+			<h1 class="font-display text-3xl font-semibold tracking-tight text-foreground">No Rival Assigned Yet</h1>
 			<p class="mx-auto max-w-md text-sm text-muted-foreground">
 				Smaran pairs you with the student whose accuracy is closest to yours. Complete a few MCQ quiz rounds to set your score baseline.
 			</p>
@@ -24,7 +25,7 @@
 			<div>
 				<div class="flex items-center gap-2">
 					<Swords class="size-5 text-primary" />
-					<h1 class="font-display text-3xl font-semibold tracking-tight">Rivalry & Nemesis Intelligence</h1>
+					<h1 class="font-display text-3xl font-semibold tracking-tight text-foreground">Rivalry & Nemesis Intelligence</h1>
 				</div>
 				<p class="mt-1 text-sm text-muted-foreground">
 					Head-to-head match analytics, subject battlegrounds, and rival recommendations.
@@ -57,7 +58,7 @@
 		<!-- Deck Battleground Ledger -->
 		<section class="space-y-4">
 			<div class="flex items-center justify-between">
-				<h2 class="font-display text-xl font-semibold tracking-tight flex items-center gap-2">
+				<h2 class="font-display text-xl font-semibold tracking-tight flex items-center gap-2 text-foreground">
 					<Shield class="size-4 text-primary" />
 					<span>Subject Ledger Breakdown</span>
 				</h2>
@@ -68,7 +69,7 @@
 				{#each data.nemesis.decks as d (d.deckId)}
 					{@const r = h2hRecord({ myCorrect: d.myCorrect, myTotal: d.myTotal, theirCorrect: d.theirCorrect, theirTotal: d.theirTotal })}
 					<div class="flex items-center justify-between p-4 text-xs hover:bg-muted/30 transition-colors">
-						<span class="font-medium text-sm flex items-center gap-2">
+						<span class="font-medium text-sm flex items-center gap-2 text-foreground">
 							<span>{d.emoji}</span>
 							<span>{d.deckTitle}</span>
 						</span>
@@ -76,9 +77,9 @@
 							<span class="font-mono text-muted-foreground">
 								You: <strong class="text-foreground">{d.myCorrect}/{d.myTotal}</strong> vs Rival: <strong class="text-foreground">{d.theirCorrect}/{d.theirTotal}</strong>
 							</span>
-							<span class={`rounded-full px-2.5 py-0.5 font-medium text-[11px] ${r.outcome === 'win' ? 'bg-green-500/10 text-green-700 dark:text-green-400 border border-green-500/30' : r.outcome === 'loss' ? 'bg-red-500/10 text-red-700 dark:text-red-400 border border-red-500/30' : 'bg-muted text-muted-foreground'}`}>
+							<Badge variant={r.outcome === 'win' ? 'success' : r.outcome === 'loss' ? 'destructive' : 'secondary'} class="font-medium text-[11px]">
 								{r.outcome === 'win' ? 'You lead' : r.outcome === 'loss' ? 'Rival leads' : 'Even'}
-							</span>
+							</Badge>
 						</div>
 					</div>
 				{/each}
@@ -89,7 +90,7 @@
 		{#if data.nemesis.recommendations?.rivalCandidates?.length}
 			<section class="space-y-4">
 				<div class="flex items-center justify-between">
-					<h2 class="font-display text-xl font-semibold tracking-tight flex items-center gap-2">
+					<h2 class="font-display text-xl font-semibold tracking-tight flex items-center gap-2 text-foreground">
 						<Sparkles class="size-4 text-primary" />
 						<span>Alternative Rival Recommendations</span>
 					</h2>
@@ -98,22 +99,22 @@
 
 				<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
 					{#each data.nemesis.recommendations.rivalCandidates as candidate (candidate.userId)}
-						<div class="rounded-xl border border-border/80 bg-card p-4 space-y-2 flex items-center justify-between shadow-xs">
+						<Card class="p-4 flex items-center justify-between shadow-xs border-border">
 							<div class="space-y-1 min-w-0">
 								<div class="flex items-center gap-2">
 									<span class="text-lg">{candidate.avatar}</span>
-									<span class="font-semibold text-sm truncate">{candidate.name}</span>
+									<span class="font-semibold text-sm truncate text-foreground">{candidate.name}</span>
 								</div>
 								<p class="text-[11px] text-muted-foreground">
 									{Math.round(candidate.accuracy * 100)}% accuracy · {candidate.statusLine}
 								</p>
 							</div>
-							<div class="text-right shrink-0">
-								<span class="rounded-full bg-primary/10 px-2 py-0.5 font-mono text-[10px] font-bold text-primary">
+							<div class="text-right shrink-0 ml-2">
+								<Badge variant="secondary" class="font-mono text-[10px] font-bold text-primary">
 									{candidate.matchPercentage}% Match
-								</span>
+								</Badge>
 							</div>
-						</div>
+						</Card>
 					{/each}
 				</div>
 			</section>
@@ -121,7 +122,7 @@
 
 		<!-- Card-by-Card Duels -->
 		<section class="space-y-4">
-			<h2 class="font-display text-xl font-semibold tracking-tight">Question-by-Question Ledger</h2>
+			<h2 class="font-display text-xl font-semibold tracking-tight text-foreground">Question-by-Question Ledger</h2>
 			<Card class="divide-y border-border/80">
 				{#if data.duels.length === 0}
 					<p class="p-6 text-center text-xs text-muted-foreground">
@@ -132,7 +133,7 @@
 						{@const win = duel.myCorrect / duel.myTotal > duel.theirCorrect / duel.theirTotal}
 						{@const loss = duel.myCorrect / duel.myTotal < duel.theirCorrect / duel.theirTotal}
 						<div class="flex items-center gap-3 p-3.5 text-xs hover:bg-muted/20 transition-colors">
-							<span class={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${win ? 'bg-green-500/10 text-green-600' : loss ? 'bg-red-500/10 text-red-600' : 'bg-muted text-muted-foreground'}`}>
+							<span class={`flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${win ? 'bg-success/15 text-success' : loss ? 'bg-destructive/15 text-destructive' : 'bg-muted text-muted-foreground'}`}>
 								{win ? '✓' : loss ? '✗' : '='}
 							</span>
 							<p class="text-xs text-foreground font-medium">

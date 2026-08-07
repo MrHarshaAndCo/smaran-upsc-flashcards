@@ -5,6 +5,7 @@
 	import PrelimsMockSimulator from '$lib/components/PrelimsMockSimulator.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Card } from '$lib/components/ui/card';
+	import { Badge } from '$lib/components/ui/badge';
 
 	let { data } = $props();
 
@@ -44,10 +45,10 @@
 		<div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
 			<div>
 				<div class="flex items-center gap-2">
-					<span class="inline-flex items-center gap-1 rounded-md bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary border border-primary/20">
+					<Badge variant="secondary" class="gap-1 font-bold text-primary">
 						<FolderTree class="size-3.5" />
 						UPSC PRELIMS SYLLABUS INDEX
-					</span>
+					</Badge>
 				</div>
 				<h1 class="font-display mt-2 text-3xl font-bold tracking-tight text-foreground">Syllabus Directory & Topic Tree</h1>
 				<p class="mt-1 text-sm text-muted-foreground">
@@ -83,7 +84,7 @@
 						<Layers class="size-4 text-primary" />
 						<span>Interactive Syllabus Tree</span>
 					</h2>
-					<span class="text-xs font-mono text-muted-foreground">{data.filters.length} Subjects</span>
+					<Badge variant="outline" class="font-mono text-muted-foreground">{data.filters.length} Subjects</Badge>
 				</div>
 
 				<SubjectTree
@@ -116,7 +117,7 @@
 					</div>
 					<div class="flex items-center justify-between text-xs">
 						<span class="text-muted-foreground">MCQ Format</span>
-						<span class="font-mono font-bold text-green-600">4-Option (A, B, C, D)</span>
+						<span class="font-mono font-bold text-success">4-Option (A, B, C, D)</span>
 					</div>
 				</div>
 

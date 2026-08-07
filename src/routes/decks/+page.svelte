@@ -1,19 +1,21 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { toast } from 'svelte-sonner';
-	import { Sparkles, Layers, Award, Target, BookOpen } from 'lucide-svelte';
+	import { Sparkles, Award, BookOpen } from 'lucide-svelte';
 	import QuickQuiz from '$lib/components/QuickQuiz.svelte';
 	import Flashcard from '$lib/components/Flashcard.svelte';
 	import FeedbackPanel from '$lib/components/FeedbackPanel.svelte';
 	import PrelimsMockSimulator from '$lib/components/PrelimsMockSimulator.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Card } from '$lib/components/ui/card';
+	import { Badge } from '$lib/components/ui/badge';
 	import { Progress } from '$lib/components/ui/progress';
+	import { Tabs, TabsList, TabsTrigger } from '$lib/components/ui/tabs';
 	import { StudySession } from '$lib/study/session.svelte.js';
 
 	let { data } = $props();
 
-	let activeTab = $state<'grand' | 'deck' | 'mock'>('grand');
+	let activeTab = $state<'grand' | 'deck'>('grand');
 	let showMockSimulator = $state(false);
 
 	const session = new StudySession({
@@ -32,7 +34,6 @@
 		session.rate(isCorrect ? 'good' : 'again');
 	}
 
-	// Grand test pool derived from cards
 	const grandPool = $derived(
 		(data.cards || []).map((c: any) => ({
 			id: c.id,
@@ -70,37 +71,30 @@
 			</p>
 		</div>
 
-		<!-- Traditional Sub-Tab Switcher -->
-		<div class="flex items-center gap-1 border-b border-border text-xs font-semibold">
-			<button
-				type="button"
-				onclick={() => (activeTab = 'grand')}
-				class="flex items-center gap-1.5 px-3 py-2 border-b-2 transition-colors {activeTab === 'grand' ? 'border-primary text-primary bg-primary/10 font-bold' : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50'}"
-			>
-				<Sparkles class="size-3.5" />
-				<span>Mixed Grand Test</span>
-			</button>
+		<!-- Native Shadcn UI Tabs -->
+		<Tabs value={activeTab} onValueChange={(v) => (activeTab = v as any)}>
+			<TabsList variant="line" class="border-b border-border">
+				<TabsTrigger value="grand" class="gap-1.5 font-semibold">
+					<Sparkles class="size-3.5" />
+					<span>Mixed Grand Test</span>
+				</TabsTrigger>
 
-			<button
-				type="button"
-				onclick={() => (activeTab = 'deck')}
-				class="flex items-center gap-1.5 px-3 py-2 border-b-2 transition-colors {activeTab === 'deck' ? 'border-primary text-primary bg-primary/10 font-bold' : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50'}"
-			>
-				<BookOpen class="size-3.5" />
-				<span>Spaced Deck</span>
-			</button>
+				<TabsTrigger value="deck" class="gap-1.5 font-semibold">
+					<BookOpen class="size-3.5" />
+					<span>Spaced Deck</span>
+				</TabsTrigger>
 
-			<button
-				type="button"
-				onclick={() => {
-					showMockSimulator = true;
-				}}
-				class="flex items-center gap-1.5 px-3 py-2 border-b-2 border-transparent transition-colors text-amber-700 dark:text-amber-400 hover:bg-amber-500/10"
-			>
-				<Award class="size-3.5" />
-				<span>Mock Exam (-0.66)</span>
-			</button>
-		</div>
+				<Button
+					variant="ghost"
+					size="sm"
+					onclick={() => (showMockSimulator = true)}
+					class="gap-1.5 text-xs font-semibold text-warning hover:text-warning hover:bg-warning/10"
+				>
+					<Award class="size-3.5" />
+					<span>Mock Exam (-0.66)</span>
+				</Button>
+			</TabsList>
+		</Tabs>
 	</header>
 
 	{#if activeTab === 'grand'}
@@ -108,8 +102,8 @@
 		<Card class="p-6 border border-border/80 bg-card space-y-6 shadow-sm">
 			<div class="flex items-center justify-between border-b border-border/40 pb-3">
 				<div class="flex items-center gap-2">
-					<span class="text-xs font-mono font-bold uppercase tracking-wider text-primary">⚡ Mixed Grand Test Mode</span>
-					<span class="rounded bg-muted px-2 py-0.5 font-mono text-[11px] font-medium">All Syllabus Subjects</span>
+					<Badge variant="default" class="font-mono text-[10px] uppercase font-bold">⚡ Mixed Grand Test Mode</Badge>
+					<Badge variant="secondary" class="font-mono text-[11px]">All Syllabus Subjects</Badge>
 				</div>
 			</div>
 

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { CheckCircle2, XCircle, HelpCircle } from 'lucide-svelte';
+	import { Badge } from '$lib/components/ui/badge';
 
 	interface QuestionCard {
 		id: string;
@@ -61,8 +62,8 @@
 
 	function optionStyle(index: number) {
 		if (!answered) return 'border-input bg-background hover:bg-muted/80 active:scale-[0.99] text-foreground';
-		if (index === correctIdx) return 'border-green-500 bg-green-500/10 text-green-700 dark:text-green-400 font-semibold ring-1 ring-green-500';
-		if (index === selectedIndex) return 'border-red-500 bg-red-500/10 text-red-700 dark:text-red-400 ring-1 ring-red-500';
+		if (index === correctIdx) return 'border-success bg-success/10 text-success font-semibold ring-1 ring-success';
+		if (index === selectedIndex) return 'border-destructive bg-destructive/10 text-destructive font-semibold ring-1 ring-destructive';
 		return 'border-border/40 bg-background/50 opacity-40';
 	}
 </script>
@@ -74,7 +75,7 @@
 		{:else}
 			<span class="font-mono text-primary font-medium">UPSC MCQ</span>
 		{/if}
-		<span class="rounded bg-muted px-2 py-0.5 font-mono text-[10px]">Select 1 of 4 options</span>
+		<Badge variant="outline" class="font-mono text-[10px]">Select 1 of 4 options</Badge>
 	</div>
 
 	<!-- Question Text -->
@@ -97,9 +98,9 @@
 				</div>
 				{#if answered}
 					{#if i === correctIdx}
-						<CheckCircle2 class="size-4 shrink-0 text-green-600" />
+						<CheckCircle2 class="size-4 shrink-0 text-success" />
 					{:else if i === selectedIndex}
-						<XCircle class="size-4 shrink-0 text-red-600" />
+						<XCircle class="size-4 shrink-0 text-destructive" />
 					{/if}
 				{/if}
 			</button>

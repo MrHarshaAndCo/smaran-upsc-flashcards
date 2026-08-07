@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { toast } from 'svelte-sonner';
-	import { Trophy, Share2, Copy, Check, Flame, Swords, ShieldCheck, Zap } from 'lucide-svelte';
+	import { Trophy, Share2, Check } from 'lucide-svelte';
 	import { Card } from '$lib/components/ui/card';
 	import { Button } from '$lib/components/ui/button';
+	import { Badge } from '$lib/components/ui/badge';
 
-	interface Badge {
+	interface BadgeItem {
 		id: string;
 		title: string;
 		description: string;
@@ -27,7 +28,7 @@
 
 	let copied = $state(false);
 
-	const badges: Badge[] = $derived([
+	const badges: BadgeItem[] = $derived([
 		{
 			id: 'giant-slayer',
 			title: 'Giant Slayer',
@@ -77,14 +78,14 @@
 <div class="space-y-4">
 	<div class="flex items-center justify-between">
 		<div class="flex items-center gap-2">
-			<Trophy class="size-4 text-orange-400" />
+			<Trophy class="size-4 text-warning" />
 			<h3 class="font-display text-base font-semibold tracking-tight text-foreground">Rivalry Badges & Achievements</h3>
 		</div>
 
 		<Button variant="outline" size="sm" onclick={copyChallengeLink} class="gap-1.5 text-xs">
 			{#if copied}
-				<Check class="size-3.5 text-green-500" />
-				<span class="text-green-500">Copied Link</span>
+				<Check class="size-3.5 text-success" />
+				<span class="text-success">Copied Link</span>
 			{:else}
 				<Share2 class="size-3.5 text-primary" />
 				<span>Challenge Friend</span>
@@ -94,13 +95,13 @@
 
 	<div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
 		{#each badges as b (b.id)}
-			<Card class="p-3 border text-center space-y-1.5 transition-all {b.unlocked ? 'border-orange-500/40 bg-orange-500/10 text-foreground shadow-xs' : 'border-border/40 bg-card opacity-50'}">
+			<Card class="p-3 border text-center space-y-1.5 transition-all {b.unlocked ? 'border-warning/40 bg-warning/10 text-foreground shadow-xs' : 'border-border/40 bg-card opacity-50'}">
 				<span class="text-2xl">{b.icon}</span>
 				<h4 class="font-bold text-xs">{b.title}</h4>
 				<p class="text-[10px] text-muted-foreground leading-tight line-clamp-2">{b.description}</p>
-				<span class="inline-block rounded-full bg-background/80 px-2 py-0.5 font-mono text-[9px] font-semibold text-muted-foreground border">
+				<Badge variant="outline" class="font-mono text-[9px] font-semibold text-muted-foreground">
 					{b.progressText}
-				</span>
+				</Badge>
 			</Card>
 		{/each}
 	</div>

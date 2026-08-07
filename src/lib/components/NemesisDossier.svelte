@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Card } from '$lib/components/ui/card';
+	import { Badge } from '$lib/components/ui/badge';
 	import { Target, Zap, ShieldAlert, Sparkles, Trophy } from 'lucide-svelte';
 
 	interface LeaderEntry {
@@ -42,85 +43,85 @@
 	} = $props();
 </script>
 
-<Card class="border-border/80 bg-slate-950 p-6 text-slate-100 shadow-md space-y-5">
+<Card class="border-border bg-card p-6 text-card-foreground shadow-md space-y-5">
 	<div class="flex items-start justify-between">
 		<div>
-			<div class="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-orange-400">
+			<div class="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-warning">
 				<Trophy class="size-3.5" />
 				<span>Nemesis Rival Dossier</span>
 			</div>
-			<h2 class="mt-1 text-2xl font-bold tracking-tight">{nemesis.avatar} {nemesis.name}</h2>
+			<h2 class="mt-1 text-2xl font-bold tracking-tight text-foreground">{nemesis.avatar} {nemesis.name}</h2>
 			{#if !compact}
-				<p class="mt-1 text-xs text-slate-400">
+				<p class="mt-1 text-xs text-muted-foreground">
 					{Math.round(nemesis.accuracy * 100)}% rival accuracy · {nemesis.reviews} total reviews
 				</p>
 			{/if}
 		</div>
-		<span class="rounded-full border border-orange-400/60 bg-orange-500/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-orange-400">
+		<Badge variant="warning" class="uppercase tracking-widest font-bold text-[10px]">
 			Active Nemesis
-		</span>
+		</Badge>
 	</div>
 
 	<!-- Score Record Bar -->
 	<div class="grid grid-cols-3 gap-2">
-		<div class="rounded-xl bg-slate-900/90 border border-slate-800 p-3 text-center">
-			<p class="text-2xl font-bold text-green-400">{record.win}</p>
-			<p class="text-[10px] uppercase tracking-wide text-slate-400 font-medium">You lead</p>
+		<div class="rounded-xl bg-muted/60 border border-border p-3 text-center">
+			<p class="text-2xl font-bold text-success">{record.win}</p>
+			<p class="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">You lead</p>
 		</div>
-		<div class="rounded-xl bg-slate-900/90 border border-slate-800 p-3 text-center">
-			<p class="text-2xl font-bold text-red-400">{record.loss}</p>
-			<p class="text-[10px] uppercase tracking-wide text-slate-400 font-medium">They lead</p>
+		<div class="rounded-xl bg-muted/60 border border-border p-3 text-center">
+			<p class="text-2xl font-bold text-destructive">{record.loss}</p>
+			<p class="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">They lead</p>
 		</div>
-		<div class="rounded-xl bg-slate-900/90 border border-slate-800 p-3 text-center">
-			<p class="text-2xl font-bold text-slate-300">{record.draw}</p>
-			<p class="text-[10px] uppercase tracking-wide text-slate-400 font-medium">Dead even</p>
+		<div class="rounded-xl bg-muted/60 border border-border p-3 text-center">
+			<p class="text-2xl font-bold text-muted-foreground">{record.draw}</p>
+			<p class="text-[10px] uppercase tracking-wide text-muted-foreground font-medium">Dead even</p>
 		</div>
 	</div>
 
 	<!-- Taunt Line -->
-	<p class="border-l-2 border-orange-400 bg-slate-900/50 p-3 rounded-r-lg text-xs italic text-slate-300 leading-relaxed">
+	<p class="border-l-2 border-warning bg-muted/40 p-3 rounded-r-lg text-xs italic text-foreground leading-relaxed">
 		“{taunt}”
 	</p>
 
 	<!-- Smart Rival Recommendations Section -->
 	{#if recommendations && !compact}
-		<div class="pt-3 border-t border-slate-800/80 space-y-3">
-			<div class="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-primary">
-				<Sparkles class="size-3.5 text-orange-400" />
-				<span class="text-orange-400">Rival Battleground Recommendations</span>
+		<div class="pt-3 border-t border-border space-y-3">
+			<div class="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-warning">
+				<Sparkles class="size-3.5 text-warning" />
+				<span>Rival Battleground Recommendations</span>
 			</div>
 
 			<div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
 				{#if recommendations.targetSubject}
-					<div class="rounded-lg border border-orange-500/30 bg-orange-950/20 p-2.5 space-y-1">
-						<div class="flex items-center gap-1 text-[11px] font-semibold text-orange-400">
+					<div class="rounded-lg border border-warning/30 bg-warning/10 p-2.5 space-y-1">
+						<div class="flex items-center gap-1 text-[11px] font-semibold text-warning">
 							<Target class="size-3" />
 							<span>Target to Reclaim</span>
 						</div>
-						<p class="font-medium text-slate-200">{recommendations.targetSubject.emoji} {recommendations.targetSubject.deckTitle}</p>
-						<p class="text-[10px] text-slate-400">Gap: {Math.round(Math.abs(recommendations.targetSubject.gap) * 100)}%</p>
+						<p class="font-medium text-foreground">{recommendations.targetSubject.emoji} {recommendations.targetSubject.deckTitle}</p>
+						<p class="text-[10px] text-muted-foreground">Gap: {Math.round(Math.abs(recommendations.targetSubject.gap) * 100)}%</p>
 					</div>
 				{/if}
 
 				{#if recommendations.attackSubject}
-					<div class="rounded-lg border border-green-500/30 bg-green-950/20 p-2.5 space-y-1">
-						<div class="flex items-center gap-1 text-[11px] font-semibold text-green-400">
+					<div class="rounded-lg border border-success/30 bg-success/10 p-2.5 space-y-1">
+						<div class="flex items-center gap-1 text-[11px] font-semibold text-success">
 							<Zap class="size-3" />
 							<span>Rival Vulnerability</span>
 						</div>
-						<p class="font-medium text-slate-200">{recommendations.attackSubject.emoji} {recommendations.attackSubject.deckTitle}</p>
-						<p class="text-[10px] text-slate-400">Rival accuracy: {Math.round(recommendations.attackSubject.theirAccuracy * 100)}%</p>
+						<p class="font-medium text-foreground">{recommendations.attackSubject.emoji} {recommendations.attackSubject.deckTitle}</p>
+						<p class="text-[10px] text-muted-foreground">Rival accuracy: {Math.round(recommendations.attackSubject.theirAccuracy * 100)}%</p>
 					</div>
 				{/if}
 
 				{#if recommendations.defenseSubject}
-					<div class="rounded-lg border border-red-500/30 bg-red-950/20 p-2.5 space-y-1">
-						<div class="flex items-center gap-1 text-[11px] font-semibold text-red-400">
+					<div class="rounded-lg border border-destructive/30 bg-destructive/10 p-2.5 space-y-1">
+						<div class="flex items-center gap-1 text-[11px] font-semibold text-destructive">
 							<ShieldAlert class="size-3" />
 							<span>Rival Stronghold</span>
 						</div>
-						<p class="font-medium text-slate-200">{recommendations.defenseSubject.emoji} {recommendations.defenseSubject.deckTitle}</p>
-						<p class="text-[10px] text-slate-400">Rival accuracy: {Math.round(recommendations.defenseSubject.theirAccuracy * 100)}%</p>
+						<p class="font-medium text-foreground">{recommendations.defenseSubject.emoji} {recommendations.defenseSubject.deckTitle}</p>
+						<p class="text-[10px] text-muted-foreground">Rival accuracy: {Math.round(recommendations.defenseSubject.theirAccuracy * 100)}%</p>
 					</div>
 				{/if}
 			</div>
@@ -128,7 +129,7 @@
 			<!-- Actionable Insights List -->
 			<div class="space-y-1.5 pt-1">
 				{#each recommendations.insights as insight}
-					<p class="text-[11px] text-slate-300 leading-normal flex items-start gap-1.5">
+					<p class="text-[11px] text-muted-foreground leading-normal flex items-start gap-1.5">
 						<span>•</span>
 						<span>{insight}</span>
 					</p>
