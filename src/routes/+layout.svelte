@@ -15,9 +15,9 @@
 	}
 
 	const links = [
-		{ href: '/', label: 'Syllabus Index', icon: FolderTree },
-		{ href: '/decks', label: 'Flashcards & Quiz', icon: Sparkles },
+		{ href: '/syllabus', label: 'Syllabus Index', icon: FolderTree },
 		{ href: '/study', label: 'Subject Drills', icon: GraduationCap },
+		{ href: '/decks', label: 'Flashcards & Quiz', icon: Sparkles },
 		{ href: '/colab', label: 'Colab & Rivalry', icon: Users },
 		{ href: '/leaderboard', label: 'Leaderboard', icon: Trophy }
 	];
@@ -45,11 +45,11 @@
 	<!-- Auth pages (login/register) — standalone, no app shell -->
 	<main class="min-h-screen">{@render children()}</main>
 {:else}
-	<header class="sticky top-0 z-50 border-b border-border/40 bg-background/85 backdrop-blur-xl shadow-xs">
+	<header class="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur-md shadow-xs">
 		<div class="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
 			<!-- Brand Logo -->
-			<a href="/" class="flex items-center gap-2.5 group">
-				<div class="flex size-9 items-center justify-center rounded-xl bg-gradient-to-tr from-primary to-orange-500 text-primary-foreground shadow-md shadow-primary/25 transition-transform group-hover:scale-105">
+			<a href="/" class="flex items-center gap-2.5 group mr-4">
+				<div class="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
 					<BookOpenCheck class="size-5" />
 				</div>
 				<div class="flex flex-col">
@@ -60,15 +60,15 @@
 				</div>
 			</a>
 
-			<!-- Desktop Segmented Capsule Navigation -->
-			<nav class="hidden md:flex items-center gap-1 rounded-full bg-muted/60 p-1 border border-border/50 shadow-inner">
+			<!-- Desktop Traditional Header Navigation Tabs -->
+			<nav class="hidden md:flex items-center gap-1 h-full">
 				{#each links as link}
 					{@const isActive = active(link.href)}
 					<a
 						href={link.href}
-						class="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all duration-200 {isActive ? 'bg-primary text-primary-foreground shadow-md shadow-primary/25 scale-[1.02]' : 'text-muted-foreground hover:text-foreground hover:bg-muted/80'}"
+						class="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-md border-b-2 transition-colors {isActive ? 'border-primary text-primary bg-primary/10 font-bold' : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/60'}"
 					>
-						<link.icon class="size-3.5" />
+						<link.icon class="size-4" />
 						<span>{link.label}</span>
 					</a>
 				{/each}
@@ -76,16 +76,16 @@
 
 			<!-- Right Actions -->
 			<div class="flex items-center gap-2 text-sm">
-				<div class="hidden sm:flex items-center gap-2 rounded-full border border-border/50 bg-card px-3 py-1 text-xs">
+				<div class="hidden sm:flex items-center gap-2 rounded-md border border-border bg-card px-3 py-1 text-xs">
 					<span class="size-2 rounded-full bg-green-500 animate-pulse"></span>
 					<span class="font-semibold text-foreground truncate max-w-[100px]">{data.user.name}</span>
 				</div>
 
-				<a href="/settings" class="inline-flex items-center rounded-full p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors" title="Settings" aria-label="Settings">
+				<a href="/settings" class="inline-flex items-center rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors" title="Settings" aria-label="Settings">
 					<Settings class="size-4" />
 				</a>
 
-				<button onclick={logout} class="inline-flex items-center rounded-full p-2 text-muted-foreground hover:bg-muted hover:text-destructive transition-colors" title="Log out" aria-label="Log out">
+				<button onclick={logout} class="inline-flex items-center rounded-md p-2 text-muted-foreground hover:bg-muted hover:text-destructive transition-colors" title="Log out" aria-label="Log out">
 					<LogOut class="size-4" />
 				</button>
 			</div>
@@ -95,14 +95,14 @@
 	<main class="mx-auto max-w-6xl px-4 pb-24 md:pb-8">{@render children()}</main>
 	<Toaster position="top-center" richColors />
 
-	<!-- Floating Mobile Glassmorphic Navigation -->
-	<nav class="fixed bottom-4 left-4 right-4 z-50 md:hidden rounded-2xl border border-border/80 bg-background/90 backdrop-blur-xl shadow-2xl p-1.5">
+	<!-- Traditional Mobile Glassmorphic Navigation Bar -->
+	<nav class="fixed bottom-0 left-0 right-0 z-50 md:hidden border-t border-border bg-background/95 backdrop-blur-lg p-1">
 		<div class="flex items-center justify-around">
 			{#each links as link}
 				{@const isActive = active(link.href)}
 				<a
 					href={link.href}
-					class="flex flex-col items-center gap-0.5 rounded-xl px-2.5 py-1.5 transition-all {isActive ? 'bg-primary/10 text-primary font-bold shadow-xs' : 'text-muted-foreground hover:text-foreground'}"
+					class="flex flex-col items-center gap-1 rounded-md px-2 py-1.5 transition-colors {isActive ? 'text-primary font-bold border-t-2 border-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground'}"
 				>
 					<link.icon class="size-4" />
 					<span class="text-[10px] font-semibold">{link.label}</span>

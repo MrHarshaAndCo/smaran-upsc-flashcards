@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { CheckCircle2, XCircle, HelpCircle } from 'lucide-svelte';
 
 	interface QuestionCard {
@@ -26,7 +27,6 @@
 	const questionText = $derived(card.question || card.front || '');
 	const optionsList = $derived.by(() => {
 		if (card.options && card.options.length > 0) return card.options;
-		// If back text exists without explicit options array, derive distractor options
 		return [
 			card.back || 'Correct answer',
 			'Option B - Secondary alternative',
@@ -39,10 +39,14 @@
 	let selectedIndex = $state<number | null>(null);
 	let answered = $state(false);
 
+	let currentCardId = $state<string | null>(null);
 	$effect(() => {
-		const _id = card.id;
-		selectedIndex = null;
-		answered = false;
+		const newId = card.id;
+		if (newId !== untrack(() => currentCardId)) {
+			currentCardId = newId;
+			selectedIndex = null;
+			answered = false;
+		}
 	});
 
 	const letters = ['A', 'B', 'C', 'D'];

@@ -63,36 +63,39 @@
 		<div>
 			<div class="flex items-center gap-2">
 				<Sparkles class="size-5 text-primary" />
-				<h1 class="font-display text-3xl font-bold tracking-tight">Mixed Grand Test & MCQ Arena</h1>
+				<h1 class="font-display text-3xl font-bold tracking-tight text-foreground">Flashcards & MCQ Arena</h1>
 			</div>
 			<p class="mt-1 text-sm text-muted-foreground">
 				Take full mixed grand tests across the entire syllabus or practice spaced repetition MCQ flashcards.
 			</p>
 		</div>
 
-		<!-- Tab Mode Switcher Buttons -->
-		<div class="flex items-center gap-1 rounded-xl bg-muted/60 p-1 border border-border/50 text-xs font-semibold">
+		<!-- Traditional Sub-Tab Switcher -->
+		<div class="flex items-center gap-1 border-b border-border text-xs font-semibold">
 			<button
+				type="button"
 				onclick={() => (activeTab = 'grand')}
-				class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 transition-all {activeTab === 'grand' ? 'bg-background text-primary shadow-xs font-bold' : 'text-muted-foreground hover:text-foreground'}"
+				class="flex items-center gap-1.5 px-3 py-2 border-b-2 transition-colors {activeTab === 'grand' ? 'border-primary text-primary bg-primary/10 font-bold' : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50'}"
 			>
 				<Sparkles class="size-3.5" />
 				<span>Mixed Grand Test</span>
 			</button>
 
 			<button
+				type="button"
 				onclick={() => (activeTab = 'deck')}
-				class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 transition-all {activeTab === 'deck' ? 'bg-background text-primary shadow-xs font-bold' : 'text-muted-foreground hover:text-foreground'}"
+				class="flex items-center gap-1.5 px-3 py-2 border-b-2 transition-colors {activeTab === 'deck' ? 'border-primary text-primary bg-primary/10 font-bold' : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50'}"
 			>
 				<BookOpen class="size-3.5" />
 				<span>Spaced Deck</span>
 			</button>
 
 			<button
+				type="button"
 				onclick={() => {
 					showMockSimulator = true;
 				}}
-				class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 transition-all text-amber-600 dark:text-amber-400 hover:text-amber-700"
+				class="flex items-center gap-1.5 px-3 py-2 border-b-2 border-transparent transition-colors text-amber-700 dark:text-amber-400 hover:bg-amber-500/10"
 			>
 				<Award class="size-3.5" />
 				<span>Mock Exam (-0.66)</span>

@@ -27,15 +27,6 @@
 	let searchQuery = $state('');
 	let expandedMap = $state<Record<string, boolean>>({});
 
-	// Initialize all expanded by default
-	$effect(() => {
-		const initial: Record<string, boolean> = {};
-		for (const f of filters) {
-			initial[f.subject] = expandedMap[f.subject] ?? true;
-		}
-		expandedMap = initial;
-	});
-
 	const subjectIcons: Record<string, string> = {
 		'Indian Polity': '🏛️',
 		'Modern History': '🕰️',
@@ -51,9 +42,13 @@
 		return subjectIcons[subject] || '📖';
 	}
 
+	function isExpanded(subject: string): boolean {
+		return expandedMap[subject] ?? true;
+	}
+
 	function toggleExpand(subject: string, e: MouseEvent) {
 		e.stopPropagation();
-		expandedMap[subject] = !expandedMap[subject];
+		expandedMap[subject] = !(expandedMap[subject] ?? true);
 	}
 
 	function expandAll() {
@@ -104,6 +99,7 @@
 
 		<div class="flex items-center gap-1 text-[11px]">
 			<button
+				type="button"
 				onclick={expandAll}
 				class="rounded px-2 py-0.5 font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
 			>
@@ -111,6 +107,7 @@
 			</button>
 			<span class="text-muted-foreground/40">·</span>
 			<button
+				type="button"
 				onclick={collapseAll}
 				class="rounded px-2 py-0.5 font-medium text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
 			>
@@ -156,7 +153,7 @@
 			<p class="py-6 text-center text-xs text-muted-foreground">No subjects match "{searchQuery}"</p>
 		{:else}
 			{#each filteredTree as f (f.subject)}
-				{@const isExpanded = expandedMap[f.subject] ?? true}
+				{@const expanded = isExpanded(f.subject)}
 				{@const isSubjectSelected = selectedSubject === f.subject && selectedSubTopic === 'all'}
 				{@const isAnyChildSelected = selectedSubject === f.subject}
 
@@ -176,7 +173,7 @@
 								class="flex size-5 shrink-0 items-center justify-center rounded hover:bg-muted text-muted-foreground"
 								aria-label="Toggle subtopics"
 							>
-								{#if isExpanded}
+								{#if expanded}
 									<ChevronDown class="size-3.5" />
 								{:else}
 									<ChevronRight class="size-3.5" />
@@ -196,7 +193,7 @@
 					</div>
 
 					<!-- Subtopics Child Nodes (Sub-tree) -->
-					{#if isExpanded && f.subTopics.length > 0}
+					{#if expanded && f.subTopics.length > 0}
 						<div class="ml-4 border-l border-primary/20 pl-2 pr-2 pb-2 pt-0.5 space-y-1">
 							{#each f.subTopics as st (st.name)}
 								{@const isSubSelected = selectedSubject === f.subject && selectedSubTopic === st.name}
