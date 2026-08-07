@@ -233,7 +233,7 @@
 
 		<!-- Smooth progress line -->
 		<div class="h-1.5 w-full overflow-hidden rounded-full bg-muted/80">
-			<div class="h-full rounded-full bg-primary transition-all duration-500 ease-out" style={`width: ${progressPct}%`} />
+			<div class="h-full rounded-full bg-primary transition-all duration-500 ease-out" style={`width: ${progressPct}%`}></div>
 		</div>
 
 		<!-- Question Box -->

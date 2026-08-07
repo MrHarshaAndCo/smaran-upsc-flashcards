@@ -41,12 +41,7 @@ export async function getNemesisData(store: any, userId: string): Promise<Nemesi
 		lastDeckTitle: decks[0]?.deckTitle
 	});
 
-	const recommendations = getNemesisRecommendations({
-		userId,
-		nemesis,
-		decks,
-		allEntries
-	});
+	const recommendations = getNemesisRecommendations(userId, allEntries, decks);
 
 	return { nemesis, decks, record, wonDecks, lostDecks, taunt, myStreak: me.streak, recommendations };
 }

@@ -1,30 +1,16 @@
 /**
- * Nemesis system: rival selection, head-to-head records, taunts, and smart recommendations.
- * Pure and deterministic engine for UPSC aspirants.
+ * Nemesis system: the rival selection, head-to-head records, taunts, and recommendations.
+ * Pure and deterministic — every line of taunt copy is a function of the
+ * numbers, never of randomness.
  */
 
 export interface LeaderEntry {
 	userId: string;
 	name: string;
-	avatar: string;
-	accuracy: number; // 0..1 correct fraction
-	reviews: number;  // total reviews counted
+	avatar?: string;
+	accuracy: number;
+	reviews: number;
 	streak?: number;
-}
-
-export interface H2HRecordResult {
-	myRate: number;
-	theirRate: number;
-	outcome: 'win' | 'loss' | 'draw';
-}
-
-export interface TauntArgs {
-	name: string;
-	record: { win: number; loss: number; draw: number };
-	wonDecks: number;
-	lostDecks: number;
-	userStreak: number;
-	lastDeckTitle?: string;
 }
 
 export interface DeckDuelData {
@@ -37,22 +23,20 @@ export interface DeckDuelData {
 	theirTotal: number;
 }
 
-export interface SubjectComparison {
-	deckId: string;
-	deckTitle: string;
-	emoji: string;
-	myAccuracy: number;
-	theirAccuracy: number;
-	gap: number; // myAccuracy - theirAccuracy
-	status: 'dominant' | 'vulnerable' | 'behind' | 'even' | 'untested';
-}
-
 export interface NemesisRecommendation {
-	targetSubject: SubjectComparison | null;
-	attackSubject: SubjectComparison | null;
-	defenseSubject: SubjectComparison | null;
-	insights: string[];
-	rivalCandidates: Array<LeaderEntry & { matchPercentage: number; statusLine: string }>;
+	rivalCandidates: Array<{
+		userId: string;
+		name: string;
+		avatar: string;
+		accuracy: number;
+		matchPercentage: number;
+		statusLine: string;
+	}>;
+	recommendedFocusDeck: {
+		deckId: string;
+		deckTitle: string;
+		reason: string;
+	} | null;
 }
 
 /**
@@ -93,7 +77,7 @@ export function h2hRecord({
 	myTotal: number;
 	theirCorrect: number;
 	theirTotal: number;
-}): H2HRecordResult {
+}): { myRate: number; theirRate: number; outcome: 'win' | 'loss' | 'draw' } {
 	const myRate = myTotal === 0 ? 0 : myCorrect / myTotal;
 	const theirRate = theirTotal === 0 ? 0 : theirCorrect / theirTotal;
 	const outcome = myRate > theirRate ? 'win' : myRate < theirRate ? 'loss' : 'draw';
@@ -101,7 +85,7 @@ export function h2hRecord({
 }
 
 /**
- * Deterministic taunt line for the dossier based on performance data.
+ * Deterministic taunt line for the dossier.
  */
 export function tauntFor({
 	name,
@@ -110,7 +94,14 @@ export function tauntFor({
 	lostDecks,
 	userStreak,
 	lastDeckTitle
-}: TauntArgs): string {
+}: {
+	name: string;
+	record: { win: number; loss: number; draw: number };
+	wonDecks: number;
+	lostDecks: number;
+	userStreak: number;
+	lastDeckTitle?: string;
+}): string {
 	if (userStreak >= 5) {
 		return `${name} has seen you answer ${userStreak} in a row. They are taking notes.`;
 	}
@@ -118,14 +109,10 @@ export function tauntFor({
 		return `Overall you lead ${name} ${record.win}–${record.loss}. Enjoy it while the syllabus lasts.`;
 	}
 	if (record.win > record.loss) {
-		return `${name} leads you ${record.win}–${record.loss} overall. ${
-			lastDeckTitle ? `${lastDeckTitle} is theirs — for now.` : 'The next deck decides.'
-		}`;
+		return `${name} leads you ${record.win}–${record.loss} overall. ${lastDeckTitle ? `${lastDeckTitle} is theirs — for now.` : 'The next deck decides.'}`;
 	}
 	if (wonDecks > lostDecks) {
-		return `You split the decks with ${name} but took more of them. ${
-			lostDecks > 0 ? `They will not forget ${lostDecks} loss${lostDecks === 1 ? '' : 'es'}.` : ''
-		}`;
+		return `You split the decks with ${name} but took more of them. ${lostDecks > 0 ? `They will not forget ${lostDecks} loss${lostDecks === 1 ? '' : 'es'}.` : ''}`;
 	}
 	if (lostDecks > wonDecks) {
 		return `Dead even overall, but ${name} holds more decks than you. Close the gap deck by deck.`;
@@ -157,107 +144,35 @@ export function cardDuelLine({
 }
 
 /**
- * Generate smart recommendations based on Nemesis subject breakdown and leaderboard entries.
+ * Generates recommendations for rival candidates and focus deck.
  */
-export function getNemesisRecommendations({
-	userId,
-	nemesis,
-	decks,
-	allEntries
-}: {
-	userId: string;
-	nemesis: LeaderEntry | null;
-	decks: DeckDuelData[];
-	allEntries: LeaderEntry[];
-}): NemesisRecommendation {
-	if (!nemesis) {
-		return {
-			targetSubject: null,
-			attackSubject: null,
-			defenseSubject: null,
-			insights: ['Start completing MCQ quiz sessions to establish your rivalry baseline.'],
-			rivalCandidates: []
-		};
-	}
+export function getNemesisRecommendations(
+	userId: string,
+	entries: LeaderEntry[],
+	decks: DeckDuelData[] = []
+): NemesisRecommendation {
+	const me = entries.find((e) => e.userId === userId) || {
+		userId,
+		name: 'You',
+		accuracy: 0.75,
+		reviews: 10
+	};
 
-	const subjectComparisons: SubjectComparison[] = decks.map((d) => {
-		const myAcc = d.myTotal > 0 ? d.myCorrect / d.myTotal : 0;
-		const theirAcc = d.theirTotal > 0 ? d.theirCorrect / d.theirTotal : 0;
-		const gap = myAcc - theirAcc;
-
-		let status: SubjectComparison['status'] = 'even';
-		if (d.myTotal === 0 && d.theirTotal === 0) status = 'untested';
-		else if (gap > 0.15) status = 'dominant';
-		else if (gap < -0.15) status = 'behind';
-		else if (theirAcc < 0.5 && d.theirTotal > 0) status = 'vulnerable';
-
-		return {
-			deckId: d.deckId,
-			deckTitle: d.deckTitle,
-			emoji: d.emoji,
-			myAccuracy: myAcc,
-			theirAccuracy: theirAcc,
-			gap,
-			status
-		};
-	});
-
-	// Find target subject (where nemesis leads or gap is closest)
-	const behindSubjects = subjectComparisons
-		.filter((s) => s.status === 'behind' || s.gap < 0)
-		.sort((a, b) => a.gap - b.gap); // largest gap behind first
-
-	const targetSubject = behindSubjects[0] ?? subjectComparisons[0] ?? null;
-
-	// Find vulnerability attack subject (where nemesis accuracy is lowest)
-	const attackSubject = [...subjectComparisons]
-		.filter((s) => s.theirAccuracy > 0)
-		.sort((a, b) => a.theirAccuracy - b.theirAccuracy)[0] ?? null;
-
-	// Find defense subject (where nemesis accuracy is highest)
-	const defenseSubject = [...subjectComparisons]
-		.filter((s) => s.theirAccuracy > 0)
-		.sort((a, b) => b.theirAccuracy - a.theirAccuracy)[0] ?? null;
-
-	const insights: string[] = [];
-
-	if (targetSubject && targetSubject.gap < 0) {
-		insights.push(
-			`🎯 Priority Target: ${targetSubject.emoji} ${targetSubject.deckTitle} — ${nemesis.name} leads by ${Math.round(Math.abs(targetSubject.gap) * 100)}%. Practice this topic to close the gap!`
-		);
-	}
-
-	if (attackSubject) {
-		insights.push(
-			`⚡ Rival Vulnerability: ${attackSubject.emoji} ${attackSubject.deckTitle} — ${nemesis.name} only scores ${Math.round(attackSubject.theirAccuracy * 100)}% here. Exploit this subject to gain lead points!`
-		);
-	}
-
-	if (defenseSubject && defenseSubject.theirAccuracy >= 0.7) {
-		insights.push(
-			`🛡️ Threat Defense: ${defenseSubject.emoji} ${defenseSubject.deckTitle} — ${nemesis.name} is strong here (${Math.round(defenseSubject.theirAccuracy * 100)}%). Master key questions to prevent losing ground.`
-		);
-	}
-
-	if (insights.length === 0) {
-		insights.push(`🔥 Even Matchup: You and ${nemesis.name} are closely matched across all active subjects.`);
-	}
-
-	// Calculate rival candidates
-	const me = allEntries.find((e) => e.userId === userId);
-	const meAcc = me ? me.accuracy : 0;
-
-	const rivalCandidates = allEntries
+	const candidates = entries
 		.filter((e) => e.userId !== userId)
 		.map((e) => {
-			const diff = Math.abs(e.accuracy - meAcc);
-			const matchPercentage = Math.max(50, Math.round((1 - diff) * 100));
-			let statusLine = 'Balanced Rival';
-			if (e.accuracy > meAcc + 0.1) statusLine = 'Pacesetter (Harder Challenge)';
-			else if (e.accuracy < meAcc - 0.1) statusLine = 'Catchable Target';
+			const diff = Math.abs(e.accuracy - me.accuracy);
+			const matchPercentage = Math.max(60, Math.round(100 - diff * 200));
+			let statusLine = 'Target Rival';
+			if (e.accuracy > me.accuracy) statusLine = 'Leading Aspirant (Pace Rival)';
+			else if (e.accuracy < me.accuracy) statusLine = 'Chasing Aspirant (Challenger)';
+			else statusLine = 'Dead Even Match';
 
 			return {
-				...e,
+				userId: e.userId,
+				name: e.name,
+				avatar: e.avatar || '🎯',
+				accuracy: e.accuracy,
 				matchPercentage,
 				statusLine
 			};
@@ -265,11 +180,28 @@ export function getNemesisRecommendations({
 		.sort((a, b) => b.matchPercentage - a.matchPercentage)
 		.slice(0, 4);
 
+	let recommendedFocusDeck: NemesisRecommendation['recommendedFocusDeck'] = null;
+	if (decks.length > 0) {
+		const losingDeck = decks.find(
+			(d) => d.theirTotal > 0 && d.theirCorrect / d.theirTotal > (d.myTotal > 0 ? d.myCorrect / d.myTotal : 0)
+		);
+		if (losingDeck) {
+			recommendedFocusDeck = {
+				deckId: losingDeck.deckId,
+				deckTitle: losingDeck.deckTitle,
+				reason: `Your rival currently leads in ${losingDeck.deckTitle}. Review this deck to flip the score!`
+			};
+		} else {
+			recommendedFocusDeck = {
+				deckId: decks[0].deckId,
+				deckTitle: decks[0].deckTitle,
+				reason: `Keep expanding your lead in ${decks[0].deckTitle}!`
+			};
+		}
+	}
+
 	return {
-		targetSubject,
-		attackSubject,
-		defenseSubject,
-		insights,
-		rivalCandidates
+		rivalCandidates: candidates,
+		recommendedFocusDeck
 	};
 }
