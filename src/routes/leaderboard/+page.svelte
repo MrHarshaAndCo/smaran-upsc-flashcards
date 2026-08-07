@@ -6,14 +6,14 @@
 	import Stat from '$lib/components/Stat.svelte';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
-	import { Swords, Sparkles, Trophy } from 'lucide-svelte';
+	import { Swords, Trophy } from 'lucide-svelte';
 
 	let { data } = $props();
 	let selected = $state('global');
 
 	const me = $derived(page.data.user ?? null);
 	const entries = $derived(selected === 'global' ? data.global : data.perDeck[selected] ?? []);
-	const deck = $derived(selected === 'global' ? null : data.decks.find((d) => d.id === selected));
+	const deck = $derived(selected === 'global' ? null : data.decks.find((d: any) => d.id === selected));
 
 	const myEntry = $derived(entries.find((e: any) => e.userId === me?.id) ?? null);
 	const myRank = $derived(entries.findIndex((e: any) => e.userId === me?.id) + 1);

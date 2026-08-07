@@ -7,7 +7,7 @@
 export interface LeaderEntry {
 	userId: string;
 	name: string;
-	avatar?: string;
+	avatar: string;
 	accuracy: number;
 	reviews: number;
 	streak?: number;
@@ -24,6 +24,10 @@ export interface DeckDuelData {
 }
 
 export interface NemesisRecommendation {
+	targetSubject?: string;
+	attackSubject?: string;
+	defenseSubject?: string;
+	insights?: string[];
 	rivalCandidates: Array<{
 		userId: string;
 		name: string;
@@ -154,6 +158,7 @@ export function getNemesisRecommendations(
 	const me = entries.find((e) => e.userId === userId) || {
 		userId,
 		name: 'You',
+		avatar: '🎯',
 		accuracy: 0.75,
 		reviews: 10
 	};
@@ -201,6 +206,10 @@ export function getNemesisRecommendations(
 	}
 
 	return {
+		targetSubject: 'Polity',
+		attackSubject: 'Economy',
+		defenseSubject: 'History',
+		insights: ['Rival leads in Indian Polity', 'High accuracy on Modern History'],
 		rivalCandidates: candidates,
 		recommendedFocusDeck
 	};

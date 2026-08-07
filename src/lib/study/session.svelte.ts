@@ -10,40 +10,36 @@ import { seededShuffle } from '../engine/shuffle.js';
  * the page is a thin renderer.
  */
 export class StudySession {
-	/** @type {import('../data/store.js').Card[]} */
-	cards = $state([]);
-	deckId = $state('');
-	deck = $state(null);
-	queue = $state([]);
-	idx = $state(0);
-	flipped = $state(false);
-	rated = $state(false);
-	/** @type {any[]} */
-	feedbacks = $state([]);
-	/** @type {Array<{ cardId: string, rating: string, ms: number }>} */
-	results = $state([]);
-	/** @type {Map<string, number>} cardId → miss count */
-	misses = $state(new Map());
-	requeue = $state([]);
-	repass = $state(false);
+	cards = $state<any[]>([]);
+	deckId = $state<string>('');
+	deck = $state<any>(null);
+	queue = $state<any[]>([]);
+	idx = $state<number>(0);
+	flipped = $state<boolean>(false);
+	rated = $state<boolean>(false);
+	feedbacks = $state<any[]>([]);
+	results = $state<Array<{ cardId: string; rating: string; ms: number }>>([]);
+	misses = $state<Map<string, number>>(new Map());
+	requeue = $state<string[]>([]);
+	repass = $state<boolean>(false);
 	repassLevel = 0;
-	done = $state(false);
-	posting = $state(false);
-	/** @type {Map<string, any>} */
-	states = $state(new Map());
-	summary = $state(null);
+	done = $state<boolean>(false);
+	posting = $state<boolean>(false);
+	states = $state<Map<string, any>>(new Map());
+	summary = $state<any>(null);
+	nemesisUserId = $state<string | null>(null);
 
 	// Server-provided context.
-	peerStats = {};
-	nemesisStats = null;
-	nemesisName = null;
-	myMeta = {};
-	userName = 'Aspirant';
+	peerStats: any = {};
+	nemesisStats: any = null;
+	nemesisName: string | null = null;
+	myMeta: any = {};
+	userName: string = 'Aspirant';
 
 	startedAt = Date.now();
 	cardShownAt = Date.now();
 
-	constructor({ deck, cards, cardStates, peerStats, nemesisStats, nemesisName, myMeta, userName, nemesisUserId }) {
+	constructor({ deck, cards, cardStates, peerStats, nemesisStats, nemesisName, myMeta, userName, nemesisUserId }: any) {
 		this.deck = deck;
 		this.deckId = deck.id;
 		this.cards = cards;
@@ -53,14 +49,12 @@ export class StudySession {
 		if (nemesisUserId) this.nemesisUserId = nemesisUserId;
 		this.myMeta = myMeta;
 		if (userName) this.userName = userName;
-		this.states = new Map(Object.entries(cardStates).map(([k, v]) => [k, { ...v }]));
-		// Due cards first, then never-seen cards, then the rest — spaced
-		// repetition should surface the cards the scheduler wants back.
+		this.states = new Map(Object.entries(cardStates || {}).map(([k, v]) => [k, { ...(v as any) }]));
 		const now = Date.now();
 		const due = [];
 		const fresh = [];
 		const rest = [];
-		for (const card of cards) {
+		for (const card of cards || []) {
 			const st = this.states.get(card.id);
 			if (st && st.due <= now) due.push(card);
 			else if (!st) fresh.push(card);
@@ -74,19 +68,19 @@ export class StudySession {
 		];
 	}
 
-	get current() {
+	get current(): any {
 		return this.queue[this.idx];
 	}
 
-	get answered() {
+	get answered(): number {
 		return this.results.length;
 	}
 
-	get totalInPass() {
+	get totalInPass(): number {
 		return this.queue.length;
 	}
 
-	rate(rating) {
+	rate(rating: string) {
 		if (!this.current || this.rated) return;
 		const card = this.current;
 		const ms = Date.now() - this.cardShownAt;
@@ -170,24 +164,23 @@ export class StudySession {
 		for (const st of this.states.values()) if (st.due <= Date.now() + DAY_MS) dueTomorrow++;
 		const advice = sessionAdvice({ correct, total, lapses, missedCards, dueTomorrow });
 
-		let nemesisNote = null;
+		let nemesisNote: any = null;
 		if (this.nemesisStats && this.nemesisName) {
 			let nc = 0;
 			let nt = 0;
-			for (const s of Object.values(this.nemesisStats)) {
+			for (const s of Object.values(this.nemesisStats) as any[]) {
 				nc += s.correctCount;
 				nt += s.totalCount;
 			}
-			nemesisNote = rivalReport({ nemesisName: this.nemesisName, myCorrect: correct, myTotal: total, theirCorrect: nc, theirTotal: nt });
+			nemesisNote = rivalReport(this.nemesisName, Math.round((correct / Math.max(total, 1)) * 100), Math.round((nc / Math.max(nt, 1)) * 100));
 		}
 
 		this.summary = { total, correct, lapses, missedCards, advice, nemesisNote };
 
-		// Nemesis encounter data.
-		let nemesisPayload = undefined;
+		let nemesisPayload: any = undefined;
 		if (this.nemesisUserId) {
 			let nc = 0, nt = 0;
-			if (this.nemesisStats) for (const s of Object.values(this.nemesisStats)) { nc += s.correctCount; nt += s.totalCount; }
+			if (this.nemesisStats) for (const s of Object.values(this.nemesisStats) as any[]) { nc += s.correctCount; nt += s.totalCount; }
 			if (nt > 0 && total > 0) {
 				nemesisPayload = { nemesisUserId: this.nemesisUserId, myCorrect: correct, myTotal: total, theirCorrect: nc, theirTotal: nt, outcome: (correct / total) > (nc / nt) ? "win" : (correct / total) < (nc / nt) ? "loss" : "draw" };
 			}
