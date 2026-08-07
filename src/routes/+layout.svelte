@@ -16,11 +16,11 @@
 	}
 
 	const links = [
-		{ href: '/syllabus', label: 'Syllabus Index', icon: FolderTree },
-		{ href: '/study', label: 'Subject Drills', icon: GraduationCap },
-		{ href: '/decks', label: 'Flashcards & Quiz', icon: Sparkles },
-		{ href: '/colab', label: 'Colab & Rivalry', icon: Users },
-		{ href: '/leaderboard', label: 'Leaderboard', icon: Trophy }
+		{ href: '/syllabus', label: 'Syllabus Index', mobileLabel: 'Syllabus', icon: FolderTree },
+		{ href: '/study', label: 'Subject Drills', mobileLabel: 'Drills', icon: GraduationCap },
+		{ href: '/decks', label: 'Flashcards & Quiz', mobileLabel: 'Flashcards', icon: Sparkles },
+		{ href: '/colab', label: 'Colab & Rivalry', mobileLabel: 'Colab', icon: Users },
+		{ href: '/leaderboard', label: 'Leaderboard', mobileLabel: 'Rankings', icon: Trophy }
 	];
 
 	const active = (href) =>
@@ -67,9 +67,9 @@
 					{@const isActive = active(link.href)}
 					<a
 						href={link.href}
-						class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-md border-b-2 shrink-0 transition-colors {isActive ? 'border-primary text-primary bg-primary/10 font-bold' : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/60'}"
+						class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-md border-b-2 shrink-0 transition-colors {isActive ? 'border-primary text-primary bg-primary/10 font-bold' : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/60'}"
 					>
-						<link.icon class="size-3.5" />
+						<link.icon class="size-4" />
 						<span>{link.label}</span>
 					</a>
 				{/each}
@@ -96,17 +96,22 @@
 	<main class="mx-auto max-w-6xl px-4 pb-24 md:pb-8">{@render children()}</main>
 	<Toaster position="top-center" richColors />
 
-	<!-- Traditional Mobile Glassmorphic Navigation Bar -->
-	<nav class="fixed bottom-0 left-0 right-0 z-50 md:hidden border-t border-border bg-background/95 backdrop-blur-lg p-1">
+	<!-- Traditional Mobile App Bottom Tab Bar (1-word clean labels) -->
+	<nav class="fixed bottom-0 left-0 right-0 z-50 md:hidden border-t border-border bg-background/95 backdrop-blur-lg px-1 py-1">
 		<div class="flex items-center justify-around">
 			{#each links as link}
 				{@const isActive = active(link.href)}
 				<a
 					href={link.href}
-					class="flex flex-col items-center gap-0.5 rounded-md px-1.5 py-1 transition-colors shrink-0 {isActive ? 'text-primary font-bold border-t-2 border-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground'}"
+					class="flex-1 flex flex-col items-center justify-center gap-1 py-1 text-center transition-colors {isActive ? 'text-primary font-bold' : 'text-muted-foreground hover:text-foreground'}"
 				>
-					<link.icon class="size-4" />
-					<span class="text-[9px] font-semibold">{link.label}</span>
+					{#if isActive}
+						<div class="h-0.5 w-6 rounded-full bg-primary mb-0.5 animate-in fade-in duration-150"></div>
+					{:else}
+						<div class="h-0.5 w-6 opacity-0 mb-0.5"></div>
+					{/if}
+					<link.icon class="size-5" />
+					<span class="text-[10px] tracking-tight leading-none">{link.mobileLabel}</span>
 				</a>
 			{/each}
 		</div>

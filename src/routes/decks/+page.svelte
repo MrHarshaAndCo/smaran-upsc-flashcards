@@ -76,42 +76,45 @@
 {/if}
 
 <div class="mx-auto max-w-4xl space-y-5 pt-4 sm:pt-6">
-	<!-- Page Header -->
+	<!-- Page Header & 3-Tab Navigation Bar -->
 	<header class="border-b border-border pb-4 space-y-4">
-		<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-			<div>
-				<div class="flex items-center gap-2">
-					<Sparkles class="size-5 text-primary" />
-					<h1 class="font-display text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Flashcards & MCQ Arena</h1>
-				</div>
-				<p class="mt-1 text-xs sm:text-sm text-muted-foreground">
-					Practice syllabus questions with spaced repetition flashcards or full timed mixed grand tests.
-				</p>
+		<div>
+			<div class="flex items-center gap-2">
+				<Sparkles class="size-5 text-primary" />
+				<h1 class="font-display text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Flashcards & MCQ Arena</h1>
 			</div>
-
-			<Button
-				variant="outline"
-				size="sm"
-				onclick={() => (showMockSimulator = true)}
-				class="gap-1.5 shrink-0 text-xs font-semibold text-warning hover:text-warning hover:bg-warning/10 border-warning/30 self-start sm:self-auto"
-			>
-				<Award class="size-4" />
-				<span>Prelims Mock Exam (-0.66)</span>
-			</Button>
+			<p class="mt-1 text-xs sm:text-sm text-muted-foreground">
+				Practice syllabus questions with spaced repetition flashcards or full timed mixed grand tests.
+			</p>
 		</div>
 
-		<!-- Scrollable Sub Tabs Bar -->
-		<Tabs value={activeTab} onValueChange={(v) => (activeTab = v as any)} class="w-full">
-			<div class="w-full overflow-x-auto scrollbar-none">
-				<TabsList variant="line" class="w-full justify-start gap-2 border-b border-border pb-px">
-					<TabsTrigger value="grand" class="gap-2 font-semibold">
-						<Sparkles class="size-4" />
+		<!-- Unified 3-Tab Scrollable Navigation Bar -->
+		<Tabs
+			value={activeTab}
+			onValueChange={(v) => {
+				if (v === 'mock') {
+					showMockSimulator = true;
+				} else {
+					activeTab = v as any;
+				}
+			}}
+			class="w-full"
+		>
+			<div class="w-full overflow-x-auto scrollbar-none pb-1">
+				<TabsList variant="line" class="flex items-center gap-1.5 w-max min-w-full justify-start border-b border-border/80 pb-px">
+					<TabsTrigger value="grand" class="gap-2 font-semibold px-3.5 py-2 text-xs sm:text-sm shrink-0 whitespace-nowrap">
+						<Sparkles class="size-4 text-primary" />
 						<span>Mixed Grand Test</span>
 					</TabsTrigger>
 
-					<TabsTrigger value="deck" class="gap-2 font-semibold">
-						<BookOpen class="size-4" />
+					<TabsTrigger value="deck" class="gap-2 font-semibold px-3.5 py-2 text-xs sm:text-sm shrink-0 whitespace-nowrap">
+						<BookOpen class="size-4 text-primary" />
 						<span>Spaced Deck</span>
+					</TabsTrigger>
+
+					<TabsTrigger value="mock" class="gap-2 font-semibold px-3.5 py-2 text-xs sm:text-sm shrink-0 whitespace-nowrap text-amber-700 dark:text-amber-400">
+						<Award class="size-4" />
+						<span>Mock Exam (-0.66)</span>
 					</TabsTrigger>
 				</TabsList>
 			</div>
@@ -143,15 +146,16 @@
 	{#if activeTab === 'grand'}
 		<!-- Mixed Grand Test View -->
 		<Card class="p-4 sm:p-6 border border-border/80 bg-card space-y-4 sm:space-y-6 shadow-sm">
-			<div class="flex items-center justify-between border-b border-border/40 pb-3">
-				<div class="flex items-center gap-2 min-w-0">
+			<!-- Non-overlapping Header -->
+			<div class="flex flex-wrap items-center justify-between gap-2 border-b border-border/40 pb-3">
+				<div class="flex flex-wrap items-center gap-1.5 min-w-0">
 					<Badge variant="default" class="font-mono text-[10px] uppercase font-bold shrink-0">⚡ MCQ Arena Mode</Badge>
-					<Badge variant="secondary" class="font-mono text-[11px] truncate">
-						{subjectFilter !== 'all' ? subjectFilter : 'All Syllabus Subjects'}
+					<Badge variant="secondary" class="font-mono text-[10px] sm:text-[11px] max-w-[160px] sm:max-w-none truncate">
+						{subjectFilter !== 'all' ? subjectFilter : 'All Subjects'}
 					</Badge>
 				</div>
-				<a href="/syllabus">
-					<Button variant="ghost" size="sm" class="h-6 px-2 text-[11px] text-muted-foreground hover:text-foreground gap-1 shrink-0">
+				<a href="/syllabus" class="shrink-0 ml-auto">
+					<Button variant="ghost" size="sm" class="h-6 px-2 text-[11px] text-muted-foreground hover:text-primary gap-1">
 						<ArrowLeft class="size-3" /> Syllabus Index
 					</Button>
 				</a>
