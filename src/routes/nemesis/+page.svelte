@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { Swords, Users, Shield, Sparkles } from 'lucide-svelte';
+	import { page } from '$app/state';
+	import { Swords, Users, Shield, Sparkles, Flame } from 'lucide-svelte';
 	import NemesisDossier from '$lib/components/NemesisDossier.svelte';
 	import RivalBadges from '$lib/components/RivalBadges.svelte';
 	import { Button } from '$lib/components/ui/button';
@@ -8,9 +9,35 @@
 	import { cardDuelLine, h2hRecord } from '$lib/engine/nemesis.js';
 
 	let { data } = $props();
+
+	const isEasterEgg = $derived(page.url.searchParams.get('easterEgg') === 'true');
+	const rivalParam = $derived(page.url.searchParams.get('rival') ?? 'Rank #1 Rival');
 </script>
 
-<div class="mx-auto max-w-4xl space-y-8 pt-6">
+<div class="mx-auto max-w-4xl space-y-6 pt-4 sm:pt-6">
+	<!-- Easter Egg Active Banner -->
+	{#if isEasterEgg}
+		<div class="flex items-center justify-between gap-3 rounded-xl border-2 border-amber-500/50 bg-amber-500/10 p-4 text-xs sm:text-sm animate-in zoom-in-95 duration-200 shadow-md">
+			<div class="flex items-center gap-3">
+				<Flame class="size-6 text-amber-500 shrink-0 animate-bounce" />
+				<div>
+					<p class="font-bold text-foreground flex items-center gap-1.5 text-sm sm:text-base">
+						<span>🥚 Easter Egg Nemesis Duel Activated!</span>
+						<Badge variant="default" class="bg-amber-500 text-black font-mono text-[10px]">EASTER EGG</Badge>
+					</p>
+					<p class="text-xs text-muted-foreground mt-0.5">
+						You issued a direct Head-to-Head Nemesis Challenge against <strong>{rivalParam}</strong>! Practice subject MCQ rounds to claim victory.
+					</p>
+				</div>
+			</div>
+			<a href="/decks">
+				<Button size="sm" class="gap-1.5 font-bold shrink-0 bg-amber-500 text-black hover:bg-amber-600">
+					<Swords class="size-4" /> Start MCQ Duel
+				</Button>
+			</a>
+		</div>
+	{/if}
+
 	{#if !data.nemesis}
 		<div class="py-16 text-center space-y-4">
 			<Swords class="size-12 text-primary mx-auto opacity-50" />
@@ -18,16 +45,16 @@
 			<p class="mx-auto max-w-md text-sm text-muted-foreground">
 				Smaran pairs you with the student whose accuracy is closest to yours. Complete a few MCQ quiz rounds to set your score baseline.
 			</p>
-			<a href="/" class="inline-block pt-2"><Button size="lg">Take a Quiz</Button></a>
+			<a href="/decks" class="inline-block pt-2"><Button size="lg">Take a Quiz</Button></a>
 		</div>
 	{:else}
 		<header class="border-b border-border pb-5 flex items-center justify-between">
 			<div>
 				<div class="flex items-center gap-2">
 					<Swords class="size-5 text-primary" />
-					<h1 class="font-display text-3xl font-semibold tracking-tight text-foreground">Rivalry & Nemesis Intelligence</h1>
+					<h1 class="font-display text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Rivalry & Nemesis Intelligence</h1>
 				</div>
-				<p class="mt-1 text-sm text-muted-foreground">
+				<p class="mt-1 text-xs sm:text-sm text-muted-foreground">
 					Head-to-head match analytics, subject battlegrounds, and rival recommendations.
 				</p>
 			</div>
@@ -58,7 +85,7 @@
 		<!-- Deck Battleground Ledger -->
 		<section class="space-y-4">
 			<div class="flex items-center justify-between">
-				<h2 class="font-display text-xl font-semibold tracking-tight flex items-center gap-2 text-foreground">
+				<h2 class="font-display text-lg sm:text-xl font-semibold tracking-tight flex items-center gap-2 text-foreground">
 					<Shield class="size-4 text-primary" />
 					<span>Subject Ledger Breakdown</span>
 				</h2>
@@ -90,7 +117,7 @@
 		{#if data.nemesis.recommendations?.rivalCandidates?.length}
 			<section class="space-y-4">
 				<div class="flex items-center justify-between">
-					<h2 class="font-display text-xl font-semibold tracking-tight flex items-center gap-2 text-foreground">
+					<h2 class="font-display text-lg sm:text-xl font-semibold tracking-tight flex items-center gap-2 text-foreground">
 						<Sparkles class="size-4 text-primary" />
 						<span>Alternative Rival Recommendations</span>
 					</h2>
@@ -122,7 +149,7 @@
 
 		<!-- Card-by-Card Duels -->
 		<section class="space-y-4">
-			<h2 class="font-display text-xl font-semibold tracking-tight text-foreground">Question-by-Question Ledger</h2>
+			<h2 class="font-display text-lg sm:text-xl font-semibold tracking-tight text-foreground">Question-by-Question Ledger</h2>
 			<Card class="divide-y border-border/80">
 				{#if data.duels.length === 0}
 					<p class="p-6 text-center text-xs text-muted-foreground">
