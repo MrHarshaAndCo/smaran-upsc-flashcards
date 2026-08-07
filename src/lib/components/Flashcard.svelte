@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import { CheckCircle2, XCircle, HelpCircle } from 'lucide-svelte';
+	import { CheckCircle2, XCircle, HelpCircle, Sparkles } from 'lucide-svelte';
 	import { Badge } from '$lib/components/ui/badge';
 
 	interface QuestionCard {
@@ -61,25 +61,31 @@
 	}
 
 	function optionStyle(index: number) {
-		if (!answered) return 'border-input bg-background hover:bg-muted/80 active:scale-[0.99] text-foreground';
-		if (index === correctIdx) return 'border-success bg-success/10 text-success font-semibold ring-1 ring-success';
-		if (index === selectedIndex) return 'border-destructive bg-destructive/10 text-destructive font-semibold ring-1 ring-destructive';
-		return 'border-border/40 bg-background/50 opacity-40';
+		if (!answered) return 'border-input bg-background/80 hover:bg-accent/40 hover:border-primary/50 active:scale-[0.99] text-foreground shadow-2xs';
+		if (index === correctIdx) return 'border-success bg-success/15 text-success font-semibold ring-1 ring-success/50 shadow-xs';
+		if (index === selectedIndex) return 'border-destructive bg-destructive/15 text-destructive font-semibold ring-1 ring-destructive/50 shadow-xs';
+		return 'border-border/40 bg-muted/30 text-muted-foreground opacity-50';
 	}
 </script>
 
-<div class="rounded-2xl border border-border/80 bg-card p-6 shadow-sm space-y-5">
-	<div class="flex items-center justify-between text-xs text-muted-foreground">
+<div class="rounded-2xl border border-border bg-card p-4 sm:p-6 shadow-sm space-y-4 sm:space-y-5 animate-in fade-in zoom-in-95 duration-200">
+	<!-- Card Header -->
+	<div class="flex items-center justify-between text-xs text-muted-foreground border-b border-border/40 pb-3">
 		{#if deck}
-			<span class="font-medium text-primary">{deck.emoji ?? '⚡'} {deck.title ?? 'Quiz Set'}</span>
+			<span class="font-semibold text-primary flex items-center gap-1.5">
+				<span>{deck.emoji ?? '⚡'}</span>
+				<span>{deck.title ?? 'Quiz Set'}</span>
+			</span>
 		{:else}
-			<span class="font-mono text-primary font-medium">UPSC MCQ</span>
+			<span class="font-mono text-primary font-semibold flex items-center gap-1">
+				<Sparkles class="size-3.5" /> UPSC MCQ Flashcard
+			</span>
 		{/if}
-		<Badge variant="outline" class="font-mono text-[10px]">Select 1 of 4 options</Badge>
+		<Badge variant="outline" class="font-mono text-[10px] uppercase font-medium">Select 1 of 4</Badge>
 	</div>
 
 	<!-- Question Text -->
-	<h3 class="text-lg font-semibold leading-relaxed tracking-tight text-foreground">
+	<h3 class="text-base sm:text-lg font-semibold leading-relaxed text-foreground tracking-tight">
 		{questionText}
 	</h3>
 
@@ -90,17 +96,20 @@
 				type="button"
 				onclick={() => handleSelect(i)}
 				disabled={answered}
-				class="flex items-center justify-between rounded-xl border-2 px-4 py-3 text-left text-sm font-medium transition-all {optionStyle(i)}"
+				class="flex items-center justify-between rounded-xl border-2 px-3.5 py-3 sm:px-4 sm:py-3.5 text-left text-xs sm:text-sm font-medium transition-all duration-200 {optionStyle(i)}"
 			>
-				<div class="flex items-center gap-3">
-					<span class="font-mono text-xs font-bold opacity-60">{letters[i]}</span>
-					<span>{option}</span>
+				<div class="flex items-center gap-3 pr-2 min-w-0">
+					<span class="flex size-6 shrink-0 items-center justify-center rounded-lg bg-muted/80 font-mono text-xs font-bold text-foreground opacity-80">
+						{letters[i]}
+					</span>
+					<span class="leading-normal truncate sm:whitespace-normal">{option}</span>
 				</div>
+
 				{#if answered}
 					{#if i === correctIdx}
-						<CheckCircle2 class="size-4 shrink-0 text-success" />
+						<CheckCircle2 class="size-5 shrink-0 text-success animate-in zoom-in-75 duration-150" />
 					{:else if i === selectedIndex}
-						<XCircle class="size-4 shrink-0 text-destructive" />
+						<XCircle class="size-5 shrink-0 text-destructive animate-in zoom-in-75 duration-150" />
 					{/if}
 				{/if}
 			</button>
@@ -109,9 +118,9 @@
 
 	<!-- Answer Explanation / Hint -->
 	{#if answered}
-		<div class="rounded-xl border border-border/60 bg-muted/40 p-4 space-y-1.5 text-xs text-muted-foreground">
+		<div class="rounded-xl border border-border/60 bg-muted/40 p-4 space-y-1.5 text-xs text-muted-foreground animate-in slide-in-from-top-2 duration-200">
 			<div class="flex items-center gap-1.5 font-semibold text-foreground">
-				<HelpCircle class="size-3.5 text-primary" />
+				<HelpCircle class="size-4 text-primary" />
 				<span>{selectedIndex === correctIdx ? 'Correct Answer!' : 'Explanation'}</span>
 			</div>
 			<p class="leading-relaxed">
