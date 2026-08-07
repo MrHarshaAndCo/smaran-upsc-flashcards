@@ -10,7 +10,6 @@
 	import { Card } from '$lib/components/ui/card';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Progress } from '$lib/components/ui/progress';
-	import { Tabs, TabsList, TabsTrigger } from '$lib/components/ui/tabs';
 	import { StudySession } from '$lib/study/session.svelte.js';
 
 	let { data } = $props();
@@ -76,7 +75,7 @@
 {/if}
 
 <div class="mx-auto max-w-4xl space-y-5 pt-4 sm:pt-6">
-	<!-- Page Header & 3-Tab Navigation Bar -->
+	<!-- Page Header -->
 	<header class="border-b border-border pb-4 space-y-4">
 		<div>
 			<div class="flex items-center gap-2">
@@ -88,37 +87,35 @@
 			</p>
 		</div>
 
-		<!-- Unified 3-Tab Scrollable Navigation Bar -->
-		<Tabs
-			value={activeTab}
-			onValueChange={(v) => {
-				if (v === 'mock') {
-					showMockSimulator = true;
-				} else {
-					activeTab = v as any;
-				}
-			}}
-			class="w-full"
-		>
-			<div class="w-full overflow-x-auto scrollbar-none pb-1">
-				<TabsList variant="line" class="flex items-center gap-1.5 w-max min-w-full justify-start border-b border-border/80 pb-px">
-					<TabsTrigger value="grand" class="gap-2 font-semibold px-3.5 py-2 text-xs sm:text-sm shrink-0 whitespace-nowrap">
-						<Sparkles class="size-4 text-primary" />
-						<span>Mixed Grand Test</span>
-					</TabsTrigger>
+		<!-- Segmented 3-Tab Control Bar -->
+		<div class="grid grid-cols-3 gap-1.5 p-1.5 rounded-xl bg-muted/80 border border-border/60 shadow-inner w-full">
+			<button
+				type="button"
+				onclick={() => (activeTab = 'grand')}
+				class="flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 {activeTab === 'grand' ? 'bg-card text-primary font-bold shadow-sm ring-1 ring-border/60' : 'text-muted-foreground hover:text-foreground hover:bg-card/40'}"
+			>
+				<Sparkles class="size-4 text-primary shrink-0" />
+				<span class="truncate">Mixed Grand Test</span>
+			</button>
 
-					<TabsTrigger value="deck" class="gap-2 font-semibold px-3.5 py-2 text-xs sm:text-sm shrink-0 whitespace-nowrap">
-						<BookOpen class="size-4 text-primary" />
-						<span>Spaced Deck</span>
-					</TabsTrigger>
+			<button
+				type="button"
+				onclick={() => (activeTab = 'deck')}
+				class="flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 {activeTab === 'deck' ? 'bg-card text-primary font-bold shadow-sm ring-1 ring-border/60' : 'text-muted-foreground hover:text-foreground hover:bg-card/40'}"
+			>
+				<BookOpen class="size-4 text-primary shrink-0" />
+				<span class="truncate">Spaced Deck</span>
+			</button>
 
-					<TabsTrigger value="mock" class="gap-2 font-semibold px-3.5 py-2 text-xs sm:text-sm shrink-0 whitespace-nowrap text-amber-700 dark:text-amber-400">
-						<Award class="size-4" />
-						<span>Mock Exam (-0.66)</span>
-					</TabsTrigger>
-				</TabsList>
-			</div>
-		</Tabs>
+			<button
+				type="button"
+				onclick={() => (showMockSimulator = true)}
+				class="flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-lg text-xs sm:text-sm font-semibold transition-all duration-200 text-amber-700 dark:text-amber-400 hover:bg-amber-500/10 hover:text-amber-800"
+			>
+				<Award class="size-4 shrink-0" />
+				<span class="truncate">Mock Exam</span>
+			</button>
+		</div>
 	</header>
 
 	<!-- Dynamic Active Filter Banner -->
