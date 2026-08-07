@@ -77,40 +77,44 @@
 
 <div class="mx-auto max-w-4xl space-y-5 pt-4 sm:pt-6">
 	<!-- Page Header -->
-	<header class="border-b border-border pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-		<div>
-			<div class="flex items-center gap-2">
-				<Sparkles class="size-5 text-primary" />
-				<h1 class="font-display text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Flashcards & MCQ Arena</h1>
+	<header class="border-b border-border pb-4 space-y-4">
+		<div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+			<div>
+				<div class="flex items-center gap-2">
+					<Sparkles class="size-5 text-primary" />
+					<h1 class="font-display text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Flashcards & MCQ Arena</h1>
+				</div>
+				<p class="mt-1 text-xs sm:text-sm text-muted-foreground">
+					Practice syllabus questions with spaced repetition flashcards or full timed mixed grand tests.
+				</p>
 			</div>
-			<p class="mt-1 text-xs sm:text-sm text-muted-foreground">
-				Practice syllabus questions with spaced repetition flashcards or full timed mixed grand tests.
-			</p>
+
+			<Button
+				variant="outline"
+				size="sm"
+				onclick={() => (showMockSimulator = true)}
+				class="gap-1.5 shrink-0 text-xs font-semibold text-warning hover:text-warning hover:bg-warning/10 border-warning/30 self-start sm:self-auto"
+			>
+				<Award class="size-4" />
+				<span>Prelims Mock Exam (-0.66)</span>
+			</Button>
 		</div>
 
-		<!-- Native Shadcn UI Tabs -->
-		<Tabs value={activeTab} onValueChange={(v) => (activeTab = v as any)}>
-			<TabsList variant="line" class="border-b border-border">
-				<TabsTrigger value="grand" class="gap-1.5 font-semibold text-xs sm:text-sm">
-					<Sparkles class="size-3.5" />
-					<span>Mixed Grand Test</span>
-				</TabsTrigger>
+		<!-- Scrollable Sub Tabs Bar -->
+		<Tabs value={activeTab} onValueChange={(v) => (activeTab = v as any)} class="w-full">
+			<div class="w-full overflow-x-auto scrollbar-none">
+				<TabsList variant="line" class="w-full justify-start gap-2 border-b border-border pb-px">
+					<TabsTrigger value="grand" class="gap-2 font-semibold">
+						<Sparkles class="size-4" />
+						<span>Mixed Grand Test</span>
+					</TabsTrigger>
 
-				<TabsTrigger value="deck" class="gap-1.5 font-semibold text-xs sm:text-sm">
-					<BookOpen class="size-3.5" />
-					<span>Spaced Deck</span>
-				</TabsTrigger>
-
-				<Button
-					variant="ghost"
-					size="sm"
-					onclick={() => (showMockSimulator = true)}
-					class="gap-1.5 text-xs font-semibold text-warning hover:text-warning hover:bg-warning/10"
-				>
-					<Award class="size-3.5" />
-					<span>Mock Exam (-0.66)</span>
-				</Button>
-			</TabsList>
+					<TabsTrigger value="deck" class="gap-2 font-semibold">
+						<BookOpen class="size-4" />
+						<span>Spaced Deck</span>
+					</TabsTrigger>
+				</TabsList>
+			</div>
 		</Tabs>
 	</header>
 
@@ -140,14 +144,14 @@
 		<!-- Mixed Grand Test View -->
 		<Card class="p-4 sm:p-6 border border-border/80 bg-card space-y-4 sm:space-y-6 shadow-sm">
 			<div class="flex items-center justify-between border-b border-border/40 pb-3">
-				<div class="flex items-center gap-2">
-					<Badge variant="default" class="font-mono text-[10px] uppercase font-bold">⚡ MCQ Arena Mode</Badge>
-					<Badge variant="secondary" class="font-mono text-[11px]">
+				<div class="flex items-center gap-2 min-w-0">
+					<Badge variant="default" class="font-mono text-[10px] uppercase font-bold shrink-0">⚡ MCQ Arena Mode</Badge>
+					<Badge variant="secondary" class="font-mono text-[11px] truncate">
 						{subjectFilter !== 'all' ? subjectFilter : 'All Syllabus Subjects'}
 					</Badge>
 				</div>
 				<a href="/syllabus">
-					<Button variant="ghost" size="sm" class="h-6 px-2 text-[11px] text-muted-foreground hover:text-foreground gap-1">
+					<Button variant="ghost" size="sm" class="h-6 px-2 text-[11px] text-muted-foreground hover:text-foreground gap-1 shrink-0">
 						<ArrowLeft class="size-3" /> Syllabus Index
 					</Button>
 				</a>

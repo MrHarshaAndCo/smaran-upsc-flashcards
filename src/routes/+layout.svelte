@@ -47,9 +47,9 @@
 	<main class="min-h-screen">{@render children()}</main>
 {:else}
 	<header class="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur-md shadow-xs">
-		<div class="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
+		<div class="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 gap-2">
 			<!-- Brand Logo -->
-			<a href="/" class="flex items-center gap-2.5 group mr-4">
+			<a href="/" class="flex items-center gap-2.5 group shrink-0 mr-2">
 				<div class="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
 					<BookOpenCheck class="size-5" />
 				</div>
@@ -61,22 +61,22 @@
 				</div>
 			</a>
 
-			<!-- Desktop Traditional Header Navigation Tabs -->
-			<nav class="hidden md:flex items-center gap-1 h-full">
+			<!-- Desktop Traditional Header Navigation Tabs (Scrollable on overflow) -->
+			<nav class="hidden md:flex items-center gap-1 h-full overflow-x-auto scrollbar-none shrink-0 whitespace-nowrap py-1">
 				{#each links as link}
 					{@const isActive = active(link.href)}
 					<a
 						href={link.href}
-						class="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold rounded-md border-b-2 transition-colors {isActive ? 'border-primary text-primary bg-primary/10 font-bold' : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/60'}"
+						class="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-md border-b-2 shrink-0 transition-colors {isActive ? 'border-primary text-primary bg-primary/10 font-bold' : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/60'}"
 					>
-						<link.icon class="size-4" />
+						<link.icon class="size-3.5" />
 						<span>{link.label}</span>
 					</a>
 				{/each}
 			</nav>
 
 			<!-- Right Actions -->
-			<div class="flex items-center gap-2 text-sm">
+			<div class="flex items-center gap-2 text-sm shrink-0">
 				<div class="hidden sm:flex items-center gap-2 rounded-md border border-border bg-card px-3 py-1 text-xs">
 					<span class="size-2 rounded-full bg-success animate-pulse"></span>
 					<span class="font-semibold text-foreground truncate max-w-[100px]">{data.user.name}</span>
@@ -103,10 +103,10 @@
 				{@const isActive = active(link.href)}
 				<a
 					href={link.href}
-					class="flex flex-col items-center gap-1 rounded-md px-2 py-1.5 transition-colors {isActive ? 'text-primary font-bold border-t-2 border-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground'}"
+					class="flex flex-col items-center gap-0.5 rounded-md px-1.5 py-1 transition-colors shrink-0 {isActive ? 'text-primary font-bold border-t-2 border-primary bg-primary/10' : 'text-muted-foreground hover:text-foreground'}"
 				>
 					<link.icon class="size-4" />
-					<span class="text-[10px] font-semibold">{link.label}</span>
+					<span class="text-[9px] font-semibold">{link.label}</span>
 				</a>
 			{/each}
 		</div>
